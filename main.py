@@ -36,7 +36,7 @@ required_modules = [
     "rob",
     "fight",
     "top",
-    "callbacks",   # ensure callbacks is loaded
+    "callbacks",
 ]
 
 # Optional modules
@@ -45,7 +45,7 @@ optional_modules = [
     "work",
     "shop",
     "guess",
-    "help",   # add this
+    "help",
 ]
 
 if __name__ == "__main__":
