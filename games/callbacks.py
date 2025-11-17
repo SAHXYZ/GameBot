@@ -6,7 +6,7 @@ from database_main import db
 
 def init_callbacks(bot: Client):
 
-    @bot.on_callback_query(filters.regex("show_commands"))
+    @bot.on_callback_query(filters.create(lambda _, q: q.data == "show_commands"))
     async def show_commands(_, query: CallbackQuery):
         text = (
             "🎮 **Available Commands**\n\n"
@@ -20,7 +20,7 @@ def init_callbacks(bot: Client):
         )
         await query.message.edit(text)
 
-    @bot.on_callback_query(filters.regex("show_profile"))
+   @bot.on_callback_query(filters.create(lambda _, q: q.data == "show_profile"))
     async def show_profile(_, query: CallbackQuery):
 
         user = db.get_user(query.from_user.id)
