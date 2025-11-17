@@ -6,21 +6,35 @@ from database_main import db
 
 def init_callbacks(bot: Client):
 
+    # ---- Commands Button ----
     @bot.on_callback_query(filters.create(lambda _, q: q.data == "show_commands"))
     async def show_commands(_, query: CallbackQuery):
+
         text = (
             "🎮 **Available Commands**\n\n"
+
+            "**General Commands**\n"
             "/start - Show the main menu\n"
+            "/help - Show help menu\n"
             "/profile - Your profile stats\n"
+            "/leaderboard - View top players\n\n"
+
+            "**Game Commands**\n"
             "/flip - Play a coin flip\n"
             "/roll - Random dice roll\n"
             "/rob - Rob another user\n"
             "/fight - Fight another user\n"
-            "/top - Leaderboard\n"
+            "/guess - Word guessing game\n"
+            "/work - Earn coins\n"
+            "/shop - Buy items\n"
         )
-        await query.message.edit(text)
 
-   @bot.on_callback_query(filters.create(lambda _, q: q.data == "show_profile"))
+        await query.message.edit(text)
+        await query.answer()   # important!
+
+
+    # ---- Profile Button ----
+    @bot.on_callback_query(filters.create(lambda _, q: q.data == "show_profile"))
     async def show_profile(_, query: CallbackQuery):
 
         user = db.get_user(query.from_user.id)
@@ -48,3 +62,4 @@ def init_callbacks(bot: Client):
         )
 
         await query.message.edit(text)
+        await query.answer()   # important!
