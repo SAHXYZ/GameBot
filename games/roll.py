@@ -2,9 +2,13 @@
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from database_main import db
+
+# ✅ Use MongoDB
+from database.mongo import get_user, update_user
+
 import random
 import asyncio
+
 
 def init_roll(bot: Client):
 
@@ -14,42 +18,46 @@ def init_roll(bot: Client):
         if not msg.from_user:
             return
 
-        user = db.get_user(msg.from_user.id)
+        user_id = msg.from_user.id
 
-        # Temporary “rolling…” message
+        # Temporary “rolling…” animation
         anim = await msg.reply("🎲 Rolling...")
 
-        # Pyrogram v2: use bot.send_dice()
+        # Telegram native dice animation
         dice_msg = await bot.send_dice(msg.chat.id)
 
-        # Wait for dice animation to finish
+        # Wait for animation to complete
         await asyncio.sleep(3)
 
         value = dice_msg.dice.value
         reward = value * 10
 
-        # Reward Bronze only
-        user["bronze"] = user.get("bronze", 0) + reward
-        db.update_user(msg.from_user.id, user)
+        # Update user bronze
+        user = get_user(user_id)
+        new_bronze = user.get("bronze", 0) + reward
+
+        update_user(user_id, {"bronze": new_bronze})
 
         await anim.edit(
             f"🎲 **You rolled:** `{value}`\n"
             f"🥉 **Reward:** `{reward} Bronze`"
         )
 
-    # When user taps telegram's dice button
+    # When user taps Telegram’s native dice emoji
     @bot.on_message(filters.dice)
     async def dice_msg(_, msg: Message):
 
         if not msg.from_user:
             return
 
-        user = db.get_user(msg.from_user.id)
+        user_id = msg.from_user.id
         value = msg.dice.value
         reward = value * 10
 
-        user["bronze"] = user.get("bronze", 0) + reward
-        db.update_user(msg.from_user.id, user)
+        user = get_user(user_id)
+        new_bronze = user.get("bronze", 0) + reward
+
+        update_user(user_id, {"bronze": new_bronze})
 
         await msg.reply(
             f"🎲 Dice rolled: `{value}`\n"
