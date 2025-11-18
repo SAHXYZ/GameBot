@@ -2,11 +2,14 @@
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from database_main import db
+
+# ✅ Use MongoDB
+from database.mongo import get_user, update_user
+
 from utils.cooldown import check_cooldown, update_cooldown
 import asyncio
 
-# Prices are now in BRONZE ONLY
+# Prices are in BRONZE ONLY
 SHOP_ITEMS = [
     ("Lucky Charm 🍀", 200),
     ("Golden Key 🔑", 350),
@@ -14,10 +17,12 @@ SHOP_ITEMS = [
     ("Royal Crown 👑", 900),
 ]
 
+
 def init_shop(bot: Client):
 
     @bot.on_message(filters.command("shop"))
     async def shop(_, msg: Message):
+
         if not msg.from_user:
             return
 
@@ -30,6 +35,7 @@ def init_shop(bot: Client):
 
     @bot.on_message(filters.command("buy"))
     async def buy(_, msg: Message):
+
         if not msg.from_user:
             return
 
@@ -37,7 +43,7 @@ def init_shop(bot: Client):
         if len(parts) < 2:
             return await msg.reply("Usage: /buy <item_number>")
 
-        # Validate item selection
+        # Validate index
         try:
             idx = int(parts[1]) - 1
         except:
@@ -47,7 +53,9 @@ def init_shop(bot: Client):
             return await msg.reply("❌ Invalid item number.")
 
         item_name, price = SHOP_ITEMS[idx]
-        user = db.get_user(msg.from_user.id)
+
+        user_id = msg.from_user.id
+        user = get_user(user_id)
 
         bronze = user.get("bronze", 0)
 
@@ -58,22 +66,25 @@ def init_shop(bot: Client):
             )
 
         # Deduct Bronze
-        user["bronze"] = bronze - price
+        new_bronze = bronze - price
 
-        # Add to inventory
+        # Add item to inventory
         inventory = user.get("inventory", [])
         inventory.append(item_name)
-        user["inventory"] = inventory
 
-        # Award Shop Badge after 5 items
+        # Badge check (5 items)
         badges = user.get("badges", [])
         if len(inventory) >= 5 and "🛍️" not in badges:
             badges.append("🛍️")
-        user["badges"] = badges
 
-        db.update_user(msg.from_user.id, user)
+        # Save to MongoDB
+        update_user(user_id, {
+            "bronze": new_bronze,
+            "inventory": inventory,
+            "badges": badges
+        })
 
         await msg.reply(
             f"✅ **Purchased:** {item_name}\n"
-            f"💰 **Remaining Bronze:** `{user['bronze']}` 🥉"
+            f"💰 **Remaining Bronze:** `{new_bronze}` 🥉"
         )
