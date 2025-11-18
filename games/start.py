@@ -1,9 +1,5 @@
-# filename: games/start.py
-
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-
-# ✅ USE MONGO
 from database.mongo import get_user, update_user
 
 START_TEXT = (
@@ -36,12 +32,12 @@ def init_start(bot: Client):
     @bot.on_message(filters.command("start"))
     async def start_handler(_, msg: Message):
 
+        if not msg.from_user:
+            return
+
+        user_id = msg.from_user.id
+        # ensure user exists in DB (creates if missing)
+        get_user(user_id)
+
         name = msg.from_user.first_name if msg.from_user else "Player"
-
-        # 🔥 IMPORTANT: create user in DB here
-        get_user(msg.from_user.id)
-
-        await msg.reply(
-            START_TEXT.format(name=name),
-            reply_markup=get_start_menu()
-        )
+        await msg.reply(START_TEXT.format(name=name), reply_markup=get_start_menu())
