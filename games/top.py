@@ -1,13 +1,10 @@
 # filename: games/top.py
 
 from pyrogram import Client, filters
-from pyrogram.types import (
-    Message,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    CallbackQuery
-)
-from database_main import db
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+
+# ✅ MongoDB
+from database.mongo import users     # direct access to the collection
 from utils.coins import total_bronze_value
 
 
@@ -40,77 +37,84 @@ def init_top(bot: Client):
         await msg.reply("📊 **Choose a leaderboard:**", reply_markup=leaderboard_menu())
 
     # ------------------------------
-    # TOP COINS
+    # TOP COINS — MongoDB sort
     # ------------------------------
     @bot.on_callback_query(filters.regex("^top_coins$"))
     async def top_coins(client, cq: CallbackQuery):
 
-        raw = getattr(db, "_data", {})
+        # Fetch ALL users
+        all_users = list(users.find({}))
 
-        items = []
-        for uid, u in raw.items():
+        # Calculate total bronze value for each
+        ranked = []
+        for u in all_users:
             total = total_bronze_value(u)
-            items.append((uid, total, u))
+            ranked.append((u["_id"], total, u))
 
-        items = sorted(items, key=lambda x: x[1], reverse=True)[:10]
+        # Sort descending & limit 10
+        ranked = sorted(ranked, key=lambda x: x[1], reverse=True)[:10]
 
         text = "🏆 **Top Wealth Leaderboard**\n\n"
 
         rank = 1
-        for uid, value, data in items:
-            # Fetch username properly
+        for uid, total, data in ranked:
+
             try:
-                user = await client.get_users(int(uid))
-                name = user.first_name
+                tg_user = await client.get_users(int(uid))
+                name = tg_user.first_name
             except:
                 name = f"User {uid}"
 
-            # Get coin breakdown
-            bg = data.get("black_gold", 0)
-            pt = data.get("platinum", 0)
-            gd = data.get("gold", 0)
-            sv = data.get("silver", 0)
-            bz = data.get("bronze", 0)
-
             text += (
                 f"**{rank}. {name}**\n"
-                f"🎖 {bg} | 🏅 {pt} | 🥇 {gd} | 🥈 {sv} | 🥉 {bz}\n"
-                f"💰 **Total Value:** `{value}`\n\n"
+                f"🎖 {data.get('black_gold', 0)} "
+                f"| 🏅 {data.get('platinum', 0)} "
+                f"| 🥇 {data.get('gold', 0)} "
+                f"| 🥈 {data.get('silver', 0)} "
+                f"| 🥉 {data.get('bronze', 0)}\n"
+                f"💰 **Total Value:** `{total}`\n\n"
             )
+
             rank += 1
 
         await cq.message.edit(text, reply_markup=back_button())
         await cq.answer()
 
     # ------------------------------
-    # TOP MESSAGES
+    # TOP MESSAGES — MongoDB sort
     # ------------------------------
     @bot.on_callback_query(filters.regex("^top_msgs$"))
     async def top_msgs(client, cq: CallbackQuery):
 
-        raw = getattr(db, "_data", {})
-
-        items = [(uid, u.get("messages", 0)) for uid, u in raw.items()]
-        items = sorted(items, key=lambda x: x[1], reverse=True)[:10]
+        # Fetch all users sorted by messages
+        pipeline = [
+            {"$project": {"messages": 1}}, 
+            {"$sort": {"messages": -1}},
+            {"$limit": 10}
+        ]
+        top_list = list(users.aggregate(pipeline))
 
         text = "💬 **Top Message Senders**\n\n"
 
         rank = 1
-        for uid, messages in items:
+        for entry in top_list:
+            uid = entry["_id"]
+            msgs = entry.get("messages", 0)
+
             try:
-                user = await client.get_users(int(uid))
-                name = user.first_name
+                tg_user = await client.get_users(int(uid))
+                name = tg_user.first_name
             except:
                 name = f"User {uid}"
 
-            text += f"**{rank}. {name}** — `{messages}` messages\n"
+            text += f"**{rank}. {name}** — `{msgs}` messages\n"
             rank += 1
 
         await cq.message.edit(text, reply_markup=back_button())
         await cq.answer()
 
     # ------------------------------
-    # BACK BUTTON HANDLER
+    # BACK BUTTON
     # ------------------------------
     @bot.on_callback_query(filters.regex("^lb_back$"))
     async def leaderboard_back(_, cq: CallbackQuery):
