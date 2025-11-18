@@ -23,21 +23,32 @@ def init_work(bot: Client):
     async def work_cmd(_, msg: Message):
         if not msg.from_user:
             return
+
         user = db.get_user(msg.from_user.id)
-        ok, wait, pretty = check_cooldown(user, 'work', 300)
+
+        ok, wait, pretty = check_cooldown(user, "work", 300)
         if not ok:
             return await msg.reply(f"⏳ You must wait **{pretty}** before working again.")
 
+        # Choose random task
         task = random.choice(WORK_TASKS)
-        work_msg = await msg.reply(f"🔧 You start: {task}\nWorking...")
 
-        await asyncio.sleep(1)
-        reward = random.randint(70, 150)
-        user['coins'] = user.get('coins', 0) + reward
+        working_msg = await msg.reply(f"🔧 You start: **{task}**\n⏳ Working...")
 
-        user = update_cooldown(user, 'work')
+        # Simulate work time
+        await asyncio.sleep(1.2)
+
+        # Bronze reward 1–100
+        reward = random.randint(1, 100)
+        bronze = user.get("bronze", 0)
+        user["bronze"] = bronze + reward
+
+        # Update cooldown & save
+        user = update_cooldown(user, "work")
         db.update_user(msg.from_user.id, user)
 
-        await work_msg.edit(
-            f"💼 **Work Completed!**\nYou earned **{reward} coins**."
+        # Final message
+        await working_msg.edit(
+            f"💼 **Work Completed!**\n"
+            f"✨ You earned **{reward} Bronze** 🥉"
         )
