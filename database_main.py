@@ -1,4 +1,4 @@
-# filename: database.py
+# filename: database_main.py
 """
 Thread-safe JSON database system for GameBot.
 Fully compatible with your existing data.json.
@@ -14,10 +14,19 @@ BACKUP_FILE = os.path.join(DB_PATH, "data_backup.json")
 
 _lock = Lock()
 
-# Full schema for new users
+# Full schema for new users (multi-tier coin system)
 def _default_user():
     return {
+        # legacy single value kept for compatibility (migrated)
         "coins": 0,
+
+        # new detailed coin fields (all stored as integers)
+        "black_gold": 0,
+        "platinum": 0,
+        "gold": 0,
+        "silver": 0,
+        "bronze": 0,
+
         "group_msgs": 0,
         "cooldowns": {},
         "profile": {},
@@ -68,6 +77,22 @@ class DB:
         _ensure_storage()
         self._data = _load()
 
+    def _migrate_legacy_coins(self, user: dict):
+        """
+        If user has legacy 'coins' as a single int, migrate it into bronze.
+        If new fields already exist, do not overwrite them.
+        """
+        # Only migrate when new detailed fields appear absent or zero.
+        legacy = user.get("coins", 0)
+
+        # If any detailed fields already non-zero, prefer them (no migration)
+        detailed_present = any(user.get(k, 0) for k in ("black_gold", "platinum", "gold", "silver", "bronze"))
+
+        if legacy and not detailed_present:
+            # treat legacy coins as bronze units
+            user["bronze"] = int(legacy)
+            # we keep 'coins' entry to preserve history, but new fields are authoritative
+
     def get_user(self, uid):
         """
         Returns a deep copy of user.
@@ -86,6 +111,12 @@ class DB:
             for field, value in defaults.items():
                 if field not in user:
                     user[field] = deepcopy(value)
+
+            # migrate legacy coins -> detailed fields if required
+            try:
+                self._migrate_legacy_coins(user)
+            except Exception:
+                pass
 
             _save(self._data)
             return deepcopy(user)
