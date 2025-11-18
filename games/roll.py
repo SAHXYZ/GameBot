@@ -8,7 +8,6 @@ import asyncio
 
 def init_roll(bot: Client):
 
-    # /roll or /dice command
     @bot.on_message(filters.command(["roll", "dice"]))
     async def roll_cmd(_, msg: Message):
 
@@ -17,18 +16,19 @@ def init_roll(bot: Client):
 
         user = db.get_user(msg.from_user.id)
 
-        # Send animated dice
+        # Temporary “rolling…” message
         anim = await msg.reply("🎲 Rolling...")
-        dice_msg = await msg.reply_dice()  # Telegram animation
 
-        # Wait until animation finishes
+        # Pyrogram v2: use bot.send_dice()
+        dice_msg = await bot.send_dice(msg.chat.id)
+
+        # Wait for dice animation to finish
         await asyncio.sleep(3)
 
-        # Value from dice
         value = dice_msg.dice.value
-        reward = value * 10  # Bronze reward
+        reward = value * 10
 
-        # Update bronze only
+        # Reward Bronze only
         user["bronze"] = user.get("bronze", 0) + reward
         db.update_user(msg.from_user.id, user)
 
@@ -37,7 +37,7 @@ def init_roll(bot: Client):
             f"🥉 **Reward:** `{reward} Bronze`"
         )
 
-    # Detect Telegram dice message (when user taps 🎲 button)
+    # When user taps telegram's dice button
     @bot.on_message(filters.dice)
     async def dice_msg(_, msg: Message):
 
