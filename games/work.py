@@ -1,7 +1,11 @@
 # filename: games/work.py
+
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from database_main import db
+
+# ✅ Use MongoDB instead of data.json
+from database.mongo import get_user, update_user
+
 from utils.cooldown import check_cooldown, update_cooldown
 import random
 import asyncio
@@ -17,35 +21,43 @@ WORK_TASKS = [
     "Tuning a bike 🚴",
 ]
 
+
 def init_work(bot: Client):
 
     @bot.on_message(filters.command("work"))
     async def work_cmd(_, msg: Message):
+
         if not msg.from_user:
             return
 
-        user = db.get_user(msg.from_user.id)
+        user_id = msg.from_user.id
+        user = get_user(user_id)
 
         ok, wait, pretty = check_cooldown(user, "work", 300)
         if not ok:
             return await msg.reply(f"⏳ You must wait **{pretty}** before working again.")
 
-        # Choose random task
+        # Choose a random work task
         task = random.choice(WORK_TASKS)
 
-        working_msg = await msg.reply(f"🔧 You start: **{task}**\n⏳ Working...")
+        working_msg = await msg.reply(
+            f"🔧 You start: **{task}**\n⏳ Working..."
+        )
 
-        # Simulate work time
+        # Work animation
         await asyncio.sleep(1.2)
 
-        # Bronze reward 1–100
+        # Reward bronze (1–100)
         reward = random.randint(1, 100)
-        bronze = user.get("bronze", 0)
-        user["bronze"] = bronze + reward
+        new_bronze = user.get("bronze", 0) + reward
 
-        # Update cooldown & save
-        user = update_cooldown(user, "work")
-        db.update_user(msg.from_user.id, user)
+        # Update cooldown + save to MongoDB
+        new_cd = update_cooldown(user, "work")
+
+        update_user(user_id, {
+            "bronze": new_bronze,
+            "cooldowns": new_cd
+        })
 
         # Final message
         await working_msg.edit(
