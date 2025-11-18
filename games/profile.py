@@ -1,8 +1,50 @@
 # filename: games/profile.py
 
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from database_main import db
+from utils.coins import total_bronze_value, breakdown_from_bronze
+
+def build_profile_text_for_user(user: dict, mention: str):
+    """
+    Build the profile text string from a user dict.
+    Displays Black Gold, Platinum, Gold, Silver, Bronze separately.
+    """
+    black_gold = int(user.get("black_gold", 0) or 0)
+    platinum = int(user.get("platinum", 0) or 0)
+    gold = int(user.get("gold", 0) or 0)
+    silver = int(user.get("silver", 0) or 0)
+    bronze = int(user.get("bronze", 0) or 0)
+
+    # For readability, show both denomination counts and a total bronze-equivalent (optional)
+    total_bronze = total_bronze_value(user)
+
+    badge_text = " ".join(user.get("badges", [])) if user.get("badges") else "None"
+    inv_text = ", ".join(user.get("inventory", [])) if user.get("inventory") else "No items"
+
+    text = (
+        f"👤 **Profile of {mention}**\n\n"
+        f"🎖 **Black Gold:** `{black_gold}` (purchasable / events only)\n\n"
+        f"🏅 **Platinum:** `{platinum}`\n"
+        f"🥇 **Gold:** `{gold}`\n"
+        f"🥈 **Silver:** `{silver}`\n"
+        f"🥉 **Bronze:** `{bronze}`\n\n"
+        f"🔢 **Total (bronze-equivalent):** `{total_bronze}`\n\n"
+        f"💬 **Messages Sent:** `{user.get('messages', 0)}`\n\n"
+        f"🥊 **Fight Wins:** `{user.get('fight_wins', 0)}`\n"
+        f"🕵️ **Successful Robberies:** `{user.get('rob_success', 0)}`\n"
+        f"🚨 **Failed Robberies:** `{user.get('rob_fail', 0)}`\n\n"
+        f"🎖 **Badges:** {badge_text}\n"
+        f"🛒 **Inventory:** {inv_text}"
+    )
+    return text
+
+def get_profile_markup():
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("⬅️ Back", callback_data="back_to_home")]
+        ]
+    )
 
 def init_profile(bot: Client):
 
@@ -13,27 +55,5 @@ def init_profile(bot: Client):
             return
 
         user = db.get_user(msg.from_user.id)
-
-        coins = user.get("coins", 0)
-        messages = user.get("messages", 0)
-        fights = user.get("fight_wins", 0)
-        rob_s = user.get("rob_success", 0)
-        rob_f = user.get("rob_fail", 0)
-        badges = user.get("badges", [])
-        inventory = user.get("inventory", [])
-
-        badge_text = " ".join(badges) if badges else "None"
-        inv_text = ", ".join(inventory) if inventory else "No items"
-
-        text = (
-            f"👤 **Profile of {msg.from_user.mention}**\n\n"
-            f"💰 **Coins:** `{coins}`\n"
-            f"💬 **Messages Sent:** `{messages}`\n\n"
-            f"🥊 **Fight Wins:** `{fights}`\n"
-            f"🕵️ **Successful Robberies:** `{rob_s}`\n"
-            f"🚨 **Failed Robberies:** `{rob_f}`\n\n"
-            f"🎖 **Badges:** {badge_text}\n"
-            f"🛒 **Inventory:** {inv_text}"
-        )
-
-        await msg.reply(text)
+        text = build_profile_text_for_user(user, msg.from_user.mention)
+        await msg.reply(text, reply_markup=get_profile_markup())
