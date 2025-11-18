@@ -2,44 +2,38 @@ from pymongo import MongoClient
 import os
 
 MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = os.getenv("DB_NAME", "GameBot")
 
-# ---- FIX: Allow TLS on Heroku ----
+# Ensure TLS on Heroku + allow if certificate issues
 client = MongoClient(
     MONGO_URI,
     tls=True,
     tlsAllowInvalidCertificates=True
 )
 
-db = client["GameBot"]
+db = client[DB_NAME]
 users = db["users"]
 
 
-# ----------------------------------
-# Fetch or Create User
-# ----------------------------------
 def get_user(user_id):
     user_id = str(user_id)
     user = users.find_one({"_id": user_id})
 
-    # If user does not exist, create full schema
     if not user:
         user = {
             "_id": user_id,
-
-            # --- COINS ---
+            # coins
             "black_gold": 0,
             "platinum": 0,
             "gold": 0,
             "silver": 0,
             "bronze": 0,
-
-            # --- STATS ---
+            # stats
             "messages": 0,
             "fight_wins": 0,
             "rob_success": 0,
             "rob_fail": 0,
-
-            # --- OTHER ---
+            # other
             "cooldowns": {},
             "inventory": [],
             "badges": []
@@ -49,9 +43,6 @@ def get_user(user_id):
     return user
 
 
-# ----------------------------------
-# Update user
-# ----------------------------------
 def update_user(user_id, data: dict):
     users.update_one(
         {"_id": str(user_id)},
