@@ -25,6 +25,7 @@ def init_start(bot: Client):
             "◆ ᴘᴏᴡᴇʀᴇᴅ ʙʏ @PrimordialEmperor ◆"
         )
 
+        # Main Start Menu Buttons
         buttons = InlineKeyboardMarkup(
             [
                 [
@@ -35,3 +36,15 @@ def init_start(bot: Client):
         )
 
         await msg.reply(text, reply_markup=buttons)
+
+
+# Function to generate start menu (used for Back button)
+def get_start_menu():
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("🕹 Commands", callback_data="show_commands"),
+                InlineKeyboardButton("👤 Profile", callback_data="show_profile"),
+            ]
+        ]
+    )
