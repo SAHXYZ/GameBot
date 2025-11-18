@@ -1,8 +1,10 @@
 # filename: games/callbacks.py
 
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
+from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from database_main import db
+from games.start import get_start_menu, START_TEXT
+from games.profile import build_profile_text_for_user, get_profile_markup
 
 def init_callbacks(bot: Client):
 
@@ -28,37 +30,31 @@ def init_callbacks(bot: Client):
             "/shop - Purchase items\n"
         )
 
-        await query.message.edit(text)
+        # Add Back button
+        markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("⬅️ Back", callback_data="back_to_home")]
+            ]
+        )
+
+        await query.message.edit(text, reply_markup=markup)
         await query.answer()
 
 
-    # Profile Button
+    # Profile Button (via callback)
     @bot.on_callback_query(filters.regex("^show_profile$"))
     async def show_profile(_, query: CallbackQuery):
 
         user = db.get_user(query.from_user.id)
+        text = build_profile_text_for_user(user, query.from_user.mention)
+        await query.message.edit(text, reply_markup=get_profile_markup())
+        await query.answer()
 
-        coins = user.get("coins", 0)
-        messages = user.get("messages", 0)
-        fights = user.get("fight_wins", 0)
-        rob_s = user.get("rob_success", 0)
-        rob_f = user.get("rob_fail", 0)
-        badges = user.get("badges", [])
-        inventory = user.get("inventory", [])
 
-        badge_text = " ".join(badges) if badges else "None"
-        inv_text = ", ".join(inventory) if inventory else "No items"
-
-        text = (
-            f"👤 **Profile of {query.from_user.mention}**\n\n"
-            f"💰 **Coins:** `{coins}`\n"
-            f"💬 **Messages Sent:** `{messages}`\n\n"
-            f"🥊 **Fight Wins:** `{fights}`\n"
-            f"🕵️ **Successful Robberies:** `{rob_s}`\n"
-            f"🚨 **Failed Robberies:** `{rob_f}`\n\n"
-            f"🎖 **Badges:** {badge_text}\n"
-            f"🛒 **Inventory:** {inv_text}"
-        )
-
-        await query.message.edit(text)
+    # Back to Home handler
+    @bot.on_callback_query(filters.regex("^back_to_home$"))
+    async def back_to_home(_, query: CallbackQuery):
+        # Use START_TEXT and get_start_menu from start.py
+        name = query.from_user.first_name if query.from_user else "Player"
+        await query.message.edit(START_TEXT.format(name=name), reply_markup=get_start_menu())
         await query.answer()
