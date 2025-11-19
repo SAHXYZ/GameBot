@@ -168,7 +168,7 @@ def init_guess(bot: Client):
             f"🎉 **Correct!**\n"
             f"🏆 Winner: {winner}\n"
             f"🎁 Reward: **{reward} Bronze 🥉**\n\n"
-            "Use /guess to play again."
+           "▶ Use /next for the next word!"
         )
 
     @bot.on_message(filters.command("stop"))
