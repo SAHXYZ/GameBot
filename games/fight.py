@@ -1,110 +1,99 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
+import random
+import asyncio
+
 from database.mongo import get_user, update_user
 from utils.cooldown import check_cooldown, update_cooldown
-import random, asyncio
-
-
-FIGHT_COOLDOWN = 60        # attacker cooldown
-DEFENDER_PROTECT = 40      # defender cannot be attacked instantly again
-MAX_STEAL = 50             # max bronze stolen in win
 
 
 def init_fight(bot: Client):
 
-    @bot.on_message(filters.command("fight") & filters.private)
-    async def fight_game(_, msg: Message):
-        if not msg.from_user:
-            return
+    @bot.on_message(filters.command("fight"))
+    async def fight_cmd(_, msg: Message):
 
+        # Must be a reply to someone
         if not msg.reply_to_message or not msg.reply_to_message.from_user:
-            return await msg.reply("⚔️ Reply to a user's message to start a fight!")
+            return await msg.reply("Reply to a user to start a fight!")
 
         attacker = msg.from_user
         defender = msg.reply_to_message.from_user
 
         if attacker.id == defender.id:
-            return await msg.reply("🤨 You cannot fight yourself!")
+            return await msg.reply("You cannot fight yourself!")
 
-        if defender.is_bot:
-            return await msg.reply("🤖 You cannot fight a bot!")
+        atk = get_user(attacker.id)
+        dfd = get_user(defender.id)
 
-        a_data = get_user(attacker.id)
-        d_data = get_user(defender.id)
-
-        # attacker cooldown
-        ok, wait, pretty = check_cooldown(a_data, "fight", FIGHT_COOLDOWN)
+        # cooldown = 1 minute
+        ok, wait, pretty = check_cooldown(atk, "fight", 60)
         if not ok:
             return await msg.reply(f"⏳ You must wait **{pretty}** before fighting again.")
 
-        # defender protection
-        ok2, wait2, pretty2 = check_cooldown(d_data, "fight_protect", DEFENDER_PROTECT)
-        if not ok2:
-            return await msg.reply(
-                f"🛡 **{defender.first_name}** is protected for **{pretty2}**."
+        # Animations
+        fmsg = await msg.reply("⚔️ **Fight Started...**")
+        await asyncio.sleep(1)
+        await fmsg.edit("🥊 Swinging punches...")
+        await asyncio.sleep(1)
+        await fmsg.edit("🔥 Final strike loading...")
+        await asyncio.sleep(1)
+
+        # Fight power system
+        atk_b = atk.get("bronze", 0)
+        dfd_b = dfd.get("bronze", 0)
+
+        atk_power = atk_b + random.randint(20, 140)
+        dfd_power = dfd_b + random.randint(20, 140)
+
+        # -------------------
+        # Attacker WINS
+        # -------------------
+        if atk_power >= dfd_power:
+
+            steal = random.randint(10, 80)
+            steal = min(steal, dfd_b)
+
+            new_atk_bronze = atk_b + steal
+            new_dfd_bronze = max(0, dfd_b - steal)
+
+            update_user(attacker.id, {
+                "bronze": new_atk_bronze,
+                "fight_wins": atk.get("fight_wins", 0) + 1,
+                "cooldowns": update_cooldown(atk, "fight"),
+            })
+
+            update_user(defender.id, {
+                "bronze": new_dfd_bronze
+            })
+
+            return await fmsg.edit(
+                f"🏆 **{attacker.first_name} Won the Fight!**\n\n"
+                f"🥉 You stole **{steal} Bronze** from **{defender.first_name}**!"
             )
 
-        # Animation
-        fight_msg = await msg.reply("🥊 The fight has begun...")
-        await asyncio.sleep(1.2)
-
-        # Balanced fight power
-        a_power = random.randint(20, 150)
-        d_power = random.randint(20, 150)
-
-        a_bronze = a_data.get("bronze", 0)
-        d_bronze = d_data.get("bronze", 0)
-
-        # ----------------------------------
-        # ATTACKER WINS
-        # ----------------------------------
-        if a_power >= d_power:
-
-            steal = random.randint(5, MAX_STEAL)
-            steal = min(steal, d_bronze)
-
-            new_a = a_bronze + steal
-            new_d = max(0, d_bronze - steal)
-
-            a_wins = a_data.get("fight_wins", 0) + 1
-
-            update_user(attacker.id, {"bronze": new_a, "fight_wins": a_wins})
-            update_user(defender.id, {"bronze": new_d})
-
-            result = (
-                f"🏆 **Victory!**\n"
-                f"You defeated **{defender.first_name}**!\n"
-                f"🥉 You claimed **{steal} Bronze**."
-            )
-
-        # ----------------------------------
-        # DEFENDER WINS
-        # ----------------------------------
+        # -------------------
+        # Defender WINS
+        # -------------------
         else:
-            penalty = random.randint(3, 30)
-            penalty = min(penalty, a_bronze)
 
-            new_a = max(0, a_bronze - penalty)
-            new_d = d_bronze + penalty
+            penalty = random.randint(5, 60)
+            penalty = min(penalty, atk_b)
 
-            d_wins = d_data.get("fight_wins", 0) + 1
+            new_atk_bronze = max(0, atk_b - penalty)
+            new_dfd_bronze = dfd_b + penalty
 
-            update_user(attacker.id, {"bronze": new_a})
-            update_user(defender.id, {"bronze": new_d, "fight_wins": d_wins})
+            update_user(attacker.id, {
+                "bronze": new_atk_bronze,
+                "cooldowns": update_cooldown(atk, "fight"),
+            })
 
-            result = (
-                f"😢 **Defeat!**\n"
-                f"**{defender.first_name}** overpowered you.\n"
-                f"🥉 You lost **{penalty} Bronze**."
+            update_user(defender.id, {
+                "bronze": new_dfd_bronze,
+                "fight_wins": dfd.get("fight_wins", 0) + 1
+            })
+
+            return await fmsg.edit(
+                f"😢 **You Lost the Fight!**\n\n"
+                f"➖ You lost **{penalty} Bronze**.\n"
+                f"🏆 **{defender.first_name}** gained **{penalty} Bronze**!"
             )
-
-        # ----------------------------------
-        # COOLDOWN UPDATE
-        # ----------------------------------
-        a_cd = update_cooldown(a_data, "fight")
-        d_cd = update_cooldown(d_data, "fight_protect")
-
-        update_user(attacker.id, {"cooldowns": a_cd})
-        update_user(defender.id, {"cooldowns": d_cd})
-
-        await fight_msg.edit(result)
