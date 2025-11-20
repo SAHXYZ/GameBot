@@ -40,7 +40,7 @@ def init_help(bot: Client):
 
             await msg.reply_text(
                 text,
-                parse_mode="html",   # ← IMPORTANT FIX
+                parse_mode="HTML",   # ← IMPORTANT FIX
                 disable_web_page_preview=True
             )
 
