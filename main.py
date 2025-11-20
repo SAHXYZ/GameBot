@@ -2,8 +2,7 @@ from pyrogram import Client
 import importlib
 import traceback
 from config import API_ID, API_HASH, BOT_TOKEN
-from database.mongo import client  # ensure MongoDB connection initializes first
-
+from database.mongo import client  # ensure MongoDB initializes first
 
 bot = Client(
     "GameBot",
@@ -13,16 +12,10 @@ bot = Client(
     workers=32
 )
 
-
 def safe_init(module_name: str):
-    """
-    Loads module like games.start, games.flip, games.mine, etc.
-    Calls init_<module> if it exists.
-    """
-
+    """Load game modules safely."""
     try:
         module = importlib.import_module(f"games.{module_name}")
-
         init_fn = getattr(module, f"init_{module_name}", None)
 
         if callable(init_fn):
@@ -32,33 +25,32 @@ def safe_init(module_name: str):
             print(f"[skipped] games.{module_name} (no init function)")
 
     except Exception as e:
-        print(f"[ERROR] Failed loading module '{module_name}': {e}")
+        print(f"[ERROR] Failed loading module: {module_name} -> {e}")
         traceback.print_exc()
 
-
-# Modules that MUST load for the bot to function
+# Required modules (DO NOT load callbacks twice)
 required_modules = [
     "start", "flip", "roll", "rob",
-    "fight", "top", "callbacks"
+    "fight", "top"
 ]
 
-# Modules that are optional OR gameplay features
+# Optional modules
 optional_modules = [
     "profile", "work", "shop",
-    "guess", "help", "mine"   # Mining system enabled
+    "guess", "help", "mine"
 ]
-
 
 if __name__ == "__main__":
     print("Initializing GameBot...\n")
 
-    # Load required modules first
     for module in required_modules:
         safe_init(module)
 
-    # Then load optional features
     for module in optional_modules:
         safe_init(module)
+
+    # Load callbacks LAST
+    safe_init("callbacks")
 
     print("\n✔ GameBot is running with MongoDB!")
     bot.run()
