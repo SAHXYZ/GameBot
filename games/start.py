@@ -45,7 +45,7 @@ async def safe_edit(message, text, markup=None):
         return
 
 # ==========================================================
-# 📌 Start Handler (UPDATED TO SUPPORT ?start=help)
+# 📌 Start Handler (UPDATED TO REMOVE BUTTONS IN GROUP)
 # ==========================================================
 def init_start(bot: Client):
 
@@ -57,10 +57,9 @@ def init_start(bot: Client):
             # Extract deep-link arguments
             args = msg.command[1:] if len(msg.command) > 1 else []
 
-            # If user clicked the "Help & Commands" button from group
+            # User clicked "Help & Commands" deep-link
             if args and args[0] == "help":
                 from games.help import FULL_HELP_TEXT
-
                 await msg.reply_text(
                     FULL_HELP_TEXT,
                     parse_mode=ParseMode.HTML,
@@ -68,11 +67,21 @@ def init_start(bot: Client):
                 )
                 return
 
-            # Normal /start
-            await msg.reply(
-                START_TEXT.format(name=msg.from_user.first_name),
-                reply_markup=get_start_menu()
-            )
+            # --------- DETECT PRIVATE CHAT ----------
+            chat_type = str(msg.chat.type).lower()
+            PRIVATE = ("private" in chat_type)
+
+            if PRIVATE:
+                # DM → show start with buttons
+                await msg.reply(
+                    START_TEXT.format(name=msg.from_user.first_name),
+                    reply_markup=get_start_menu()
+                )
+            else:
+                # Group → remove buttons
+                await msg.reply(
+                    START_TEXT.format(name=msg.from_user.first_name)
+                )
 
         except Exception:
             traceback.print_exc()
