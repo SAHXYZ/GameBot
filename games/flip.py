@@ -5,16 +5,23 @@ from utils.cooldown import check_cooldown, update_cooldown
 import random
 import asyncio
 
+
+FLIP_COOLDOWN = 30  # seconds
+
+
 def init_flip(bot: Client):
 
-    @bot.on_message(filters.command("flip"))
+    # ---------------------------
+    # /flip command
+    # ---------------------------
+    @bot.on_message(filters.command("flip") & filters.private)
     async def flip_cmd(_, msg):
         if not msg.from_user:
             return
 
         user = get_user(msg.from_user.id)
 
-        ok, wait, pretty = check_cooldown(user, "flip", 300)
+        ok, wait, pretty = check_cooldown(user, "flip", FLIP_COOLDOWN)
         if not ok:
             return await msg.reply(f"⏳ You must wait **{pretty}** before flipping again!")
 
@@ -29,41 +36,56 @@ def init_flip(bot: Client):
 
         await msg.reply("🎮 **Choose your side:**", reply_markup=buttons)
 
-    @bot.on_callback_query(filters.regex(r"flip_"))
+    # ---------------------------
+    # Flip callback
+    # ---------------------------
+    @bot.on_callback_query(filters.regex(r"^flip_"))
     async def flip_result(_, cq: CallbackQuery):
         choice = cq.data.replace("flip_", "")
         user_id = cq.from_user.id
+
         user = get_user(user_id)
 
-        ok, wait, pretty = check_cooldown(user, "flip", 30)
+        ok, wait, pretty = check_cooldown(user, "flip", FLIP_COOLDOWN)
         if not ok:
             return await cq.answer(f"⏳ Wait {pretty}!", show_alert=True)
 
         await cq.answer()
-        anim_msg = await cq.message.reply("🪙 Flipping coin...")
+
+        # Animation
+        anim = await cq.message.reply("🪙 Flipping coin...")
         await asyncio.sleep(1.2)
 
         actual = random.choice(["heads", "tails"])
-        reward = random.randint(1, 100)
-        penalty = random.randint(1, 40)
         bronze = user.get("bronze", 0)
 
+        reward = random.randint(20, 70)
+        penalty = random.randint(5, 30)
+
         if choice == actual:
-            new_bronze = bronze + reward
-            outcome_text = (
+            bronze += reward
+            text = (
                 f"🎉 **You Won!**\n"
                 f"🪙 Coin was **{actual.upper()}**\n"
                 f"🥉 You earned **+{reward} Bronze**!"
             )
         else:
-            new_bronze = max(0, bronze - penalty)
-            outcome_text = (
+            bronze = max(0, bronze - penalty)
+            text = (
                 f"😢 **You Lost!**\n"
                 f"🪙 Coin was **{actual.upper()}**\n"
                 f"🥉 You lost **-{penalty} Bronze**."
             )
 
-        new_cooldowns = update_cooldown(user, "flip")
-        update_user(user_id, {"bronze": new_bronze, "cooldowns": new_cooldowns})
+        # Update cooldown safely
+        cds = update_cooldown(user, "flip")
 
-        await anim_msg.edit(outcome_text)
+        update_user(
+            user_id,
+            {
+                "bronze": bronze,
+                "cooldowns": cds,
+            }
+        )
+
+        await anim.edit(text)
