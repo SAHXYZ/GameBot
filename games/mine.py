@@ -4,6 +4,9 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 import random
 import time
 
+# --------------------
+# DATABASE
+# --------------------
 try:
     from database.mongo import get_user, update_user
 except Exception:
@@ -17,9 +20,13 @@ except Exception:
             "tool_durabilities": {},
             "last_mine": 0,
         }
+
     def update_user(user_id, data):
         pass
 
+# --------------------
+# TOOLS
+# --------------------
 TOOLS = {
     "Wooden": {"power": 1, "durability": 50, "price": 50},
     "Stone": {"power": 2, "durability": 100, "price": 150},
@@ -30,6 +37,9 @@ TOOLS = {
     "Emerald": {"power": 9, "durability": 450, "price": 20000},
 }
 
+# --------------------
+# ORES
+# --------------------
 ORES = [
     {"name": "Stone", "min_power": 0, "weight": 50, "value": 1},
     {"name": "Coal", "min_power": 1, "weight": 40, "value": 2},
@@ -44,16 +54,19 @@ ORES = [
 
 MINE_COOLDOWN = 5
 
+# --------------------
+# HELPERS
+# --------------------
 
-def weighted_choice(options):
-    total = sum(o["weight"] for o in options)
+def weighted_choice(opts):
+    total = sum(o["weight"] for o in opts)
     pick = random.uniform(0, total)
     cur = 0
-    for o in options:
+    for o in opts:
         if cur + o["weight"] >= pick:
             return o
         cur += o["weight"]
-    return options[-1]
+    return opts[-1]
 
 
 def ensure_user(u):
@@ -67,6 +80,9 @@ def ensure_user(u):
     u.setdefault("last_mine", 0)
     return u
 
+# --------------------
+# MINE ACTION
+# --------------------
 
 def mine_action(uid):
     user = ensure_user(get_user(uid))
@@ -77,7 +93,7 @@ def mine_action(uid):
 
     eq = user.get("equipped")
     if not eq or eq not in TOOLS:
-        return {"success": False, "message": "❌ No valid tool equipped. Use /equip."}
+        return {"success": False, "message": "❌ You have no valid tool equipped."}
 
     dur = user["tool_durabilities"].setdefault(eq, TOOLS[eq]["durability"])
     if dur <= 0:
@@ -85,6 +101,7 @@ def mine_action(uid):
 
     usable = [o for o in ORES if TOOLS[eq]["power"] >= o["min_power"]]
     chosen = weighted_choice(usable)
+
     amount = 1 + random.choice([0, 1, 2]) + (TOOLS[eq]["power"] // 3)
 
     ores = user["inventory"]["ores"]
@@ -100,6 +117,9 @@ def mine_action(uid):
         "message": f"⛏️ You mined **{amount}x {chosen['name']}** using your {eq}!\n🪵 Durability: {user['tool_durabilities'][eq]}"
     }
 
+# --------------------
+# COMMAND HANDLERS
+# --------------------
 
 def _mine(c, m: Message):
     res = mine_action(m.from_user.id)
@@ -138,9 +158,12 @@ def _sell_handler(c, q: CallbackQuery):
     q.message.edit_text(f"🛒 Sold **{amount}x {name}** for **{gained} Bronze 🥉**!")
     q.answer()
 
+# --------------------
+# INIT (LOADER)
+# --------------------
 
 def init_mine(bot: Client):
-    bot.add_handler(MessageHandler(_mine, filters.command("mine") & filters.private))
-    bot.add_handler(MessageHandler(_sell_menu, filters.command("sell") & filters.private))
-    bot.add_handler(CallbackQueryHandler(_sell_handler, filters.regex(r"^sell_")))
+    bot.add_handler(MessageHandler(_mine), group=0, filters=filters.command("mine") & filters.private)
+    bot.add_handler(MessageHandler(_sell_menu), group=0, filters=filters.command("sell") & filters.private)
+    bot.add_handler(CallbackQueryHandler(_sell_handler), group=0)
     print("[loaded] games.mine")
