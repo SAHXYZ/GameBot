@@ -1,7 +1,9 @@
+# File: GameBot/GameBot/games/help.py
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
 def init_help(bot: Client):
+
     @bot.on_message(filters.command("help"))
     async def help_cmd(_, msg: Message):
 
@@ -15,8 +17,7 @@ def init_help(bot: Client):
             "/inv - Show inventory\n"
             "/work - Earn bronze\n"
             "/shop - Buy items\n"
-            "/buy <item> - Purchase item\n"
-            "/inv - Inventory\n\n"
+            "/buy <item> - Purchase item\n\n"
 
             "🎮 **Games**\n"
             "/flip - Coin flip\n"
@@ -24,7 +25,7 @@ def init_help(bot: Client):
             "/fight - Fight users\n"
             "/rob - Rob users\n"
             "/guess - Word guessing game\n"
+            "/mine - Mine ores (earn resources)\n"
         )
 
-        # use reply so user gets inline reply in private/group
         await msg.reply(text)
