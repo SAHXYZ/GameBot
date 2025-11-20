@@ -1,35 +1,96 @@
-# Python cache
+##############################################
+# Python Cache & Compiled Files
+##############################################
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pdm
+*.pkl
 
-# Virtual environments
+##############################################
+# Virtual Environments
+##############################################
 venv/
 env/
 .venv/
 ENV/
 
-# OS files
+##############################################
+# OS / System Files
+##############################################
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Pyrogram / Telethon session files
-*.session
-*.session-journal
+##############################################
+# Editor Settings (VSCode, JetBrains, etc.)
+##############################################
+.vscode/
+.idea/
+*.code-workspace
 
-# Logs
-*.log
-
-# Env files (keep your secrets safe)
+##############################################
+# Environment & Secret Files
+##############################################
 .env
 *.env
+.env.*
+secret.json
+secrets.json
 
-# JSON data files (optional)
+##############################################
+# Pyrogram / Telethon Session Files
+##############################################
+*.session
+*.session-journal
+*.session-journal-wal
+*.session-wal
+
+##############################################
+# Logs & Runtime Storage
+##############################################
+logs/
+*.log
+*.out
+*.err
+
+##############################################
+# Database / Cache Files
+##############################################
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+##############################################
+# Package Build & Distribution
+##############################################
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+##############################################
+# Python Bytecode Cache Folders
+##############################################
+*.cache/
+cache/
+__cache__/
+
+##############################################
+# App Data (Optional, for GameBot)
+##############################################
+data/
 data.json
+userdata.json
+temp/
+tmp/
 
-# VSCode settings
-.vscode/
-
-# PyCharm settings
-.idea/
+##############################################
+# Misc
+##############################################
+*.bak
+*.swp
+*.swo
