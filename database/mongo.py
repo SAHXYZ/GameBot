@@ -15,7 +15,7 @@ users = db["users"]
 
 
 # -------------------------------------------------
-# DEFAULT USER STRUCTURE (Single Source of Truth)
+# DEFAULT USER TEMPLATE (Single Source of Truth)
 # -------------------------------------------------
 DEFAULT_USER = {
     "black_gold": 0,
@@ -46,49 +46,49 @@ DEFAULT_USER = {
 
 
 # -------------------------------------------------
-# GET USER + SAFELY FIX STRUCTURE
+# GET USER (Load + Fix Structure Automatically)
 # -------------------------------------------------
 def get_user(user_id):
     user_id = str(user_id)
     user = users.find_one({"_id": user_id})
 
-    # --------------- CREATE NEW USER ---------------
+    # Create new user
     if not user:
         new_user = {"_id": user_id}
         new_user.update(DEFAULT_USER)
         users.insert_one(new_user)
         return new_user
 
-    # --------------- FIX EXISTING USER ---------------
+    # Fix existing user
     updated = False
     fixed_user = {"_id": user_id}
 
-    # merge defaults + existing values
     for key, default_value in DEFAULT_USER.items():
+
+        # If key missing → use default
         if key not in user:
             fixed_user[key] = default_value
             updated = True
-        else:
-            # deep fix for nested inventory
-            if key == "inventory":
-                inv = user.get("inventory", {})
+            continue
 
-                if not isinstance(inv, dict):
-                    inv = {"ores": {}, "items": []}
-                    updated = True
+        value = user[key]
 
-                inv.setdefault("ores", {})
-                inv.setdefault("items", [])
+        # Deep-fix inventory
+        if key == "inventory":
+            if not isinstance(value, dict):
+                value = {"ores": {}, "items": []}
+                updated = True
 
-                fixed_user[key] = inv
+            value.setdefault("ores", {})
+            value.setdefault("items", [])
 
-                if inv != user.get("inventory"):
-                    updated = True
+            fixed_user[key] = value
+            continue
 
-            else:
-                fixed_user[key] = user[key]
+        # Copy as-is for other fields
+        fixed_user[key] = value
 
-    # If any corrections made → update DB
+    # Update DB if any fixes applied
     if updated:
         users.update_one({"_id": user_id}, {"$set": fixed_user})
 
