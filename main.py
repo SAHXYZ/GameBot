@@ -44,7 +44,6 @@ required_modules = [
     "sell",
     "equip",
     "guess",
-    "leaderboard",
     "callbacks"  # <-- callbacks always last
 ]
 
