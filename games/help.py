@@ -4,10 +4,6 @@ from pyrogram.types import Message
 import traceback
 
 def init_help(bot: Client):
-    """
-    Register the /help command.
-    Keeps the handler simple, defensive, and safe for both private chats and groups.
-    """
 
     @bot.on_message(filters.command(["help", "commands"]))
     async def help_cmd(_, msg: Message):
@@ -15,34 +11,40 @@ def init_help(bot: Client):
             text = (
                 "🎮 **GameBot Help Menu**\n\n"
 
-                "📌 **General Commands**\n"
-                "/start - Main menu\n"
-                "/help or /commands - This help menu\n"
-                "/profile - Show your profile\n"
-                "/inv - Show inventory\n"
-                "/work - Earn bronze\n"
-                "/shop - Buy items\n"
-                "/buy <item> - Purchase item\n\n"
+                "<b>✧༺━━━༻✧  C O M M A N D S  ✧༺━━━༻✧</b>\n\n"
+                "👤 <b>P R O F I L E</b>\n"
+                "• <code>/profile</code> – View your profile\n"
+                "• <code>/inventory</code> – View your items\n"
+                "• <code>/stats</code> – View statistics\n"
+                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-                "🎮 **Games**\n"
-                "/flip - Coin flip\n"
-                "/roll - Dice roll\n"
-                "/fight - Fight users\n"
-                "/rob - Rob users\n"
-                "/guess - Word guessing game\n"
-                "/mine - Mine ores (earn resources)\n\n"
+                "🎮 <b>G A M E S</b>\n"
+                "• <code>/flip</code> – Coin flip\n"
+                "• <code>/roll</code> – Dice roll\n"
+                "• <code>/fight</code> – Fight\n"
+                "• <code>/guess</code> – Guess the word\n"
+                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-                "ℹ️ Tip: Use commands in private chat for a full interactive experience. "
-                "Some commands may require you to have a profile (use /start if you haven't)."
+                "⛏ <b>M I N I N G</b>\n"
+                "• <code>/mine</code> – Mine ores\n"
+                "• <code>/sell</code> – Sell ores\n"
+                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+                "🛒 <b>S H O P</b>\n"
+                "• <code>/buy</code> – Buy items\n"
+                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+                "📊 <b>O T H E R</b>\n"
+                "• <code>/leaderboard</code> – Leaderboard\n"
+
+                "ℹ️ *Tip:* Some features require a profile. Use /start if you haven't."
             )
 
-            # Reply — use reply_text to keep formatting explicit
-            await msg.reply_text(text)
-        except Exception as e:
-            # Defensive fallback: try to notify user, but don't crash the bot
-            try:
-                await msg.reply_text("⚠️ An error occurred while showing help.")
-            except Exception:
-                pass
-            # Print traceback to server logs for debugging
+            await msg.reply_text(text, parse_mode="markdown")
+
+        except Exception:
             traceback.print_exc()
+            try:
+                await msg.reply_text("⚠️ Error showing help menu.")
+            except:
+                pass
