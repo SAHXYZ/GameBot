@@ -1,4 +1,4 @@
-# File: GameBot/GameBot/games/callbacks.py
+# File: GameBot/games/callbacks.py
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 import traceback
@@ -8,13 +8,13 @@ from games.start import get_start_menu, START_TEXT
 from games.profile import build_profile_text_for_user, get_profile_markup
 
 
-# Safe editor (no crashes on message already edited / not modified)
-def safe_edit(message, text, markup=None):
+# Safe editor (async: await edit_text to avoid "coroutine was never awaited")
+async def safe_edit(message, text, markup=None):
     try:
         if markup:
-            return message.edit_text(text, reply_markup=markup)
+            return await message.edit_text(text, reply_markup=markup)
         else:
-            return message.edit_text(text)
+            return await message.edit_text(text)
     except Exception:
         return  # silent, safe fallback
 
@@ -27,7 +27,7 @@ def init_callbacks(bot: Client):
     @bot.on_callback_query(filters.regex("^start_back$"))
     async def start_back(_, q: CallbackQuery):
         try:
-            safe_edit(
+            await safe_edit(
                 q.message,
                 START_TEXT.format(name=q.from_user.first_name),
                 get_start_menu()
@@ -46,7 +46,7 @@ def init_callbacks(bot: Client):
     @bot.on_callback_query(filters.regex("^back_to_home$"))
     async def cb_back_home(_, q: CallbackQuery):
         try:
-            safe_edit(
+            await safe_edit(
                 q.message,
                 START_TEXT.format(name=q.from_user.first_name),
                 get_start_menu()
@@ -70,10 +70,12 @@ def init_callbacks(bot: Client):
                 await q.answer("You have no profile. Use /start")
                 return
 
-            text = build_profile_text_for_user(user)
+            # pass mention as second argument (profile builder expects mention)
+            mention = getattr(q.from_user, "mention", q.from_user.first_name)
+            text = build_profile_text_for_user(user, mention)
             markup = get_profile_markup()
 
-            safe_edit(q.message, text, markup)
+            await safe_edit(q.message, text, markup)
             await q.answer()
         except Exception:
             traceback.print_exc()
