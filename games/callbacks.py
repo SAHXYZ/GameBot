@@ -6,79 +6,141 @@ from games.profile import build_profile_text_for_user, get_profile_markup
 
 
 def safe_edit(message, text, markup=None):
-    """Safely edit message without crashing."""
+    """Safely edit a message without throwing errors."""
     try:
         if markup:
             return message.edit(text, reply_markup=markup)
         return message.edit(text)
     except:
-        return  # ignore message-not-modified or deleted errors
+        return
 
 
 def init_callbacks(bot: Client):
 
-    # -----------------------------
-    # SHOW COMMANDS
-    # -----------------------------
+    # ==========================================================
+    #  🔹 HANDLERS TRIGGERED FROM /start (new callback system)
+    # ==========================================================
+
+    # ----- Show Commands (start.py version) -----
+    @bot.on_callback_query(filters.regex("^start_cmds$"))
+    async def cb_start_cmds(_, q: CallbackQuery):
+
+        text = (
+            "🕹 **Commands Menu**\n\n"
+            "📌 **General**\n"
+            "/start — Main menu\n"
+            "/help — Full help\n"
+            "/profile — Full profile\n"
+            "/leaderboard — Top players\n\n"
+            "⛏ **Mining System**\n"
+            "/mine — Mine ores\n"
+            "/sell — Sell ores\n"
+            "/tools — Tools\n"
+            "/equip <tool> — Equip tool\n"
+            "/repair — Repair tool\n\n"
+            "💼 **Economy**\n"
+            "/work — Earn bronze\n"
+            "/shop — Buy items\n"
+            "/buy <num> — Purchase items\n\n"
+            "🎮 **Fun Games**\n"
+            "/flip — Coin toss\n"
+            "/roll — Dice\n"
+            "/fight — Fight users\n"
+            "/rob — Rob users\n"
+            "/guess — Word guessing\n"
+        )
+
+        markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("⬅️ Back", callback_data="start_back")]]
+        )
+
+        safe_edit(q.message, text, markup)
+        await q.answer()
+
+
+    # ----- Show Profile (start.py version) -----
+    @bot.on_callback_query(filters.regex("^start_profile$"))
+    async def cb_start_profile(_, q: CallbackQuery):
+
+        user = get_user(q.from_user.id)
+
+        ores = sum(user.get("inventory", {}).get("ores", {}).values())
+        items = len(user.get("inventory", {}).get("items", []))
+
+        text = (
+            f"👤 **Quick Profile**\n\n"
+            f"🥉 Bronze: **{user.get('bronze', 0)}**\n"
+            f"🪨 Ores: **{ores}**\n"
+            f"🎒 Items: **{items}**\n\n"
+            "Use /profile for full details."
+        )
+
+        markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("⬅️ Back", callback_data="start_back")]]
+        )
+
+        safe_edit(q.message, text, markup)
+        await q.answer()
+
+
+    # ----- Back to /start -----
+    @bot.on_callback_query(filters.regex("^start_back$"))
+    async def cb_start_back(_, q: CallbackQuery):
+        safe_edit(
+            q.message,
+            START_TEXT.format(name=q.from_user.first_name),
+            get_start_menu()
+        )
+        await q.answer()
+
+
+    # ====================================================================
+    #  🔹 BACKWARD COMPATIBILITY (old buttons from other modules)
+    # ====================================================================
+
+    # ----- Old: show_commands -----
     @bot.on_callback_query(filters.regex("^show_commands$"))
-    async def show_commands(_, query: CallbackQuery):
+    async def cb_old_commands(_, q: CallbackQuery):
 
         text = (
             "🎮 **GameBot Commands**\n\n"
-            "**General Commands**\n"
-            "/start - Show main menu\n"
-            "/help - Help menu\n"
-            "/profile - Your profile\n"
-            "/leaderboard - Top players\n\n"
-
-            "**Mining System**\n"
-            "/mine - Mine ores\n"
-            "/sell - Sell ores\n"
-            "/tools - View tools\n"
-            "/equip <tool> - Equip tool\n"
-            "/repair - Repair tool\n\n"
-
-            "**Economy**\n"
-            "/work - Earn coins\n"
-            "/shop - Buy items\n"
-            "/buy <num> - Purchase\n\n"
-
-            "**Games**\n"
-            "/flip - Coin flip\n"
-            "/roll - Dice roll\n"
-            "/fight - Fight a user\n"
-            "/rob - Rob a user\n"
-            "/guess - Guess game\n"
+            "/start — Main menu\n"
+            "/help — Help\n"
+            "/profile — Profile\n"
+            "/leaderboard — Top users\n\n"
+            "⛏ /mine /sell /tools /equip /repair\n"
+            "💼 /work /shop /flip /roll\n"
+            "🥊 /fight /rob /guess"
         )
 
         markup = InlineKeyboardMarkup(
             [[InlineKeyboardButton("⬅️ Back", callback_data="back_to_home")]]
         )
 
-        safe_edit(query.message, text, markup)
-        await query.answer()
+        safe_edit(q.message, text, markup)
+        await q.answer()
 
 
-    # -----------------------------
-    # PROFILE BUTTON
-    # -----------------------------
+    # ----- Old: show_profile -----
     @bot.on_callback_query(filters.regex("^show_profile$"))
-    async def show_profile(_, query: CallbackQuery):
+    async def cb_old_profile(_, q: CallbackQuery):
 
-        user = get_user(query.from_user.id)
-        text = build_profile_text_for_user(user, query.from_user.mention)
+        user = get_user(q.from_user.id)
+        text = build_profile_text_for_user(user, q.from_user.mention)
+        safe_edit(q.message, text, get_profile_markup())
+        await q.answer()
 
-        safe_edit(query.message, text, get_profile_markup())
-        await query.answer()
 
-
-    # -----------------------------
-    # BACK TO HOME
-    # -----------------------------
+    # ----- Old: Back to Home -----
     @bot.on_callback_query(filters.regex("^back_to_home$"))
-    async def back_to_home(_, query: CallbackQuery):
+    async def cb_back_home(_, q: CallbackQuery):
 
-        name = query.from_user.first_name if query.from_user else "Player"
-        safe_edit(query.message, START_TEXT.format(name=name), get_start_menu())
+        safe_edit(
+            q.message,
+            START_TEXT.format(name=q.from_user.first_name),
+            get_start_menu()
+        )
+        await q.answer()
 
-        await query.answer()
+
+    print("[loaded] games.callbacks")
