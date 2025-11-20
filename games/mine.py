@@ -1,18 +1,22 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery
+)
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-import random
-import time
+import random, time
 
-# --------------------
+# ----------------------------------------
 # DATABASE
-# --------------------
+# ----------------------------------------
 try:
     from database.mongo import get_user, update_user
-except Exception:
-    def get_user(user_id):
+except:
+    def get_user(uid):
         return {
-            "_id": str(user_id),
+            "_id": str(uid),
             "bronze": 0,
             "tools": {"Wooden": 1},
             "equipped": "Wooden",
@@ -20,13 +24,11 @@ except Exception:
             "tool_durabilities": {},
             "last_mine": 0,
         }
+    def update_user(uid, data): pass
 
-    def update_user(user_id, data):
-        pass
-
-# --------------------
-# TOOLS
-# --------------------
+# ----------------------------------------
+# TOOL DEFINITIONS
+# ----------------------------------------
 TOOLS = {
     "Wooden": {"power": 1, "durability": 50, "price": 50},
     "Stone": {"power": 2, "durability": 100, "price": 150},
@@ -37,9 +39,9 @@ TOOLS = {
     "Emerald": {"power": 9, "durability": 450, "price": 20000},
 }
 
-# --------------------
+# ----------------------------------------
 # ORES
-# --------------------
+# ----------------------------------------
 ORES = [
     {"name": "Stone", "min_power": 0, "weight": 50, "value": 1},
     {"name": "Coal", "min_power": 1, "weight": 40, "value": 2},
@@ -54,19 +56,18 @@ ORES = [
 
 MINE_COOLDOWN = 5
 
-# --------------------
+# ----------------------------------------
 # HELPERS
-# --------------------
-def weighted_choice(opts):
-    total = sum(o["weight"] for o in opts)
+# ----------------------------------------
+def weighted_choice(options):
+    total = sum(o["weight"] for o in options)
     pick = random.uniform(0, total)
     cur = 0
-    for o in opts:
+    for o in options:
         if cur + o["weight"] >= pick:
             return o
         cur += o["weight"]
-    return opts[-1]
-
+    return options[-1]
 
 def ensure_user(u):
     u.setdefault("bronze", 0)
@@ -79,70 +80,78 @@ def ensure_user(u):
     u.setdefault("last_mine", 0)
     return u
 
-# --------------------
+# ----------------------------------------
 # MINE ACTION
-# --------------------
-def mine_action(uid):
+# ----------------------------------------
+def mine_logic(uid):
     user = ensure_user(get_user(uid))
     now = time.time()
 
+    # Cooldown
     if now - user["last_mine"] < MINE_COOLDOWN:
-        return {"success": False, "message": "⏳ Please wait before mining again."}
+        return None, "⏳ Please wait before mining again."
 
     eq = user.get("equipped")
     if not eq or eq not in TOOLS:
-        return {"success": False, "message": "❌ You have no valid tool equipped."}
+        return None, "❌ You have no valid tool equipped."
 
     dur = user["tool_durabilities"].setdefault(eq, TOOLS[eq]["durability"])
     if dur <= 0:
-        return {"success": False, "message": f"⚠️ Your {eq} is broken. Repair it."}
+        return None, f"⚠️ Your {eq} is broken. Repair it."
 
-    usable = [o for o in ORES if TOOLS[eq]["power"] >= o["min_power"]]
-    chosen = weighted_choice(usable)
+    usable_ores = [o for o in ORES if TOOLS[eq]["power"] >= o["min_power"]]
+    chosen = weighted_choice(usable_ores)
 
     amount = 1 + random.choice([0, 1, 2]) + (TOOLS[eq]["power"] // 3)
 
-    ores = user["inventory"]["ores"]
-    ores[chosen["name"]] = ores.get(chosen["name"], 0) + amount
+    user["inventory"]["ores"][chosen["name"]] = \
+        user["inventory"]["ores"].get(chosen["name"], 0) + amount
 
     user["tool_durabilities"][eq] = max(0, dur - random.randint(1, 4))
     user["last_mine"] = now
-
     update_user(uid, user)
 
-    return {
-        "success": True,
-        "message": f"⛏️ You mined **{amount}x {chosen['name']}** using your {eq}!\n🪵 Durability: {user['tool_durabilities'][eq]}"
-    }
+    msg = (
+        f"⛏️ You mined **{amount}x {chosen['name']}** using your {eq}!\n"
+        f"🪵 Durability left: **{user['tool_durabilities'][eq]}**"
+    )
 
-# --------------------
-# COMMAND HANDLERS
-# --------------------
-def _mine(c, m: Message):
-    res = mine_action(m.from_user.id)
-    m.reply_text(res["message"])
+    return True, msg
 
+# ----------------------------------------
+# HANDLERS
+# ----------------------------------------
+async def _mine(client, message: Message):
+    ok, text = mine_logic(message.from_user.id)
+    await message.reply_text(text)
 
-def _sell_menu(c, m: Message):
-    keyboard, row = [], []
+async def _sell_menu(client, message: Message):
+    keyboard = []
+    row = []
+
     for ore in ORES:
-        row.append(InlineKeyboardButton(ore["name"], callback_data=f"sell_{ore['name']}") )
+        row.append(
+            InlineKeyboardButton(ore["name"], callback_data=f"sell_{ore['name']}")
+        )
         if len(row) == 2:
             keyboard.append(row)
             row = []
+
     if row:
         keyboard.append(row)
 
-    m.reply_text("🛒 **Choose an ore to sell:**", reply_markup=InlineKeyboardMarkup(keyboard))
+    await message.reply_text(
+        "🛒 **Choose an ore to sell:**",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
-
-def _sell_handler(c, q: CallbackQuery):
-    name = q.data.replace("sell_", "")
-    user = ensure_user(get_user(q.from_user.id))
+async def _sell_handler(client, query: CallbackQuery):
+    name = query.data.replace("sell_", "")
+    user = ensure_user(get_user(query.from_user.id))
     ores = user["inventory"]["ores"]
 
-    if name not in ores or ores[name] <= 0:
-        return q.answer("❌ You don't have this ore.", show_alert=True)
+    if ores.get(name, 0) <= 0:
+        return await query.answer("❌ You don't have this ore.", show_alert=True)
 
     amount = ores[name]
     price = next(o for o in ORES if o["name"] == name)["value"]
@@ -150,16 +159,19 @@ def _sell_handler(c, q: CallbackQuery):
 
     user["bronze"] += gained
     del ores[name]
-    update_user(q.from_user.id, user)
 
-    q.message.edit_text(f"🛒 Sold **{amount}x {name}** for **{gained} Bronze 🥉**!")
-    q.answer()
+    update_user(query.from_user.id, user)
 
-# --------------------
+    await query.message.edit_text(
+        f"🛒 Sold **{amount}x {name}** for **{gained} Bronze 🥉**!"
+    )
+    await query.answer()
+
+# ----------------------------------------
 # INIT (LOADER)
-# --------------------
+# ----------------------------------------
 def init_mine(bot: Client):
-    bot.add_handler(MessageHandler(_mine, filters.command("mine") & filters.private), group=0)
-    bot.add_handler(MessageHandler(_sell_menu, filters.command("sell") & filters.private), group=0)
-    bot.add_handler(CallbackQueryHandler(_sell_handler), group=0)
+    bot.add_handler(MessageHandler(_mine, filters.command("mine") & filters.private), group=1)
+    bot.add_handler(MessageHandler(_sell_menu, filters.command("sell") & filters.private), group=1)
+    bot.add_handler(CallbackQueryHandler(_sell_handler, filters.regex("^sell_")), group=1)
     print("[loaded] games.mine")
