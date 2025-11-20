@@ -3,8 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import traceback
 
-from database.mongo import create_user_if_not_exists
-
+from database.mongo import get_user, create_user_if_not_exists
 
 # ==========================================================
 # 📌 START TEXT (Home Page)
@@ -24,47 +23,17 @@ START_TEXT = (
     "◆ ᴘᴏᴡᴇʀᴇᴅ ʙʏ @PrimordialEmperor ◆"
 )
 
-
 # ==========================================================
-# 📌 MAIN MENU
+# 📌 MAIN MENU (Only 2 buttons)
 # ==========================================================
 def get_start_menu():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("👤 Profile", callback_data="open_profile")],
-        [
-            InlineKeyboardButton("🎮 Games", callback_data="games_menu"),
-            InlineKeyboardButton("🛒 Shop", callback_data="shop_menu")
-        ],
-        [
-            InlineKeyboardButton("⛏ Mine", callback_data="mine_menu"),
-            InlineKeyboardButton("📊 Top Players", callback_data="top_menu")
-        ],
         [InlineKeyboardButton("❓ Commands", callback_data="help_show")],
     ])
 
-
 # ==========================================================
-# 📌 GAME MENUS
-# ==========================================================
-def get_games_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎲 Flip", callback_data="game_flip")],
-        [InlineKeyboardButton("🎯 Roll", callback_data="game_roll")],
-        [InlineKeyboardButton("⚔ Fight", callback_data="game_fight")],
-        [InlineKeyboardButton("🔤 Guess", callback_data="game_guess")],
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")],
-    ])
-
-
-def get_help_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📜 Commands", callback_data="help_show")],
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")],
-    ])
-
-
-# ==========================================================
-# 📌 Async Safe Edit
+# 📌 Async safe editor
 # ==========================================================
 async def safe_edit(message, text, markup=None):
     try:
@@ -74,9 +43,8 @@ async def safe_edit(message, text, markup=None):
     except:
         return
 
-
 # ==========================================================
-# 📌 START HANDLER
+# 📌 Start Handler
 # ==========================================================
 def init_start(bot: Client):
 
@@ -97,42 +65,13 @@ def init_start(bot: Client):
                 pass
 
     # ======================================================
-    # 📌 MENU NAVIGATION
-    # ======================================================
-    @bot.on_callback_query(filters.regex("^games_menu$"))
-    async def games_menu(_, q):
-        await safe_edit(q.message, "🎮 **Game Menu**", get_games_menu())
-        await q.answer()
-
-    @bot.on_callback_query(filters.regex("^mine_menu$"))
-    async def mine_menu(_, q):
-        text = (
-            "⛏ **Mining Menu**\n\n"
-            "Use /mine to gather ores.\n"
-            "Sell your ores by clicking buttons after mining.\n"
-        )
-        kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")]
-        ])
-        await safe_edit(q.message, text, kb)
-        await q.answer()
-
-    @bot.on_callback_query(filters.regex("^top_menu$"))
-    async def top_menu(_, q):
-        await safe_edit(q.message, "📊 *Top Players coming soon...*", InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")]
-        ]))
-        await q.answer()
-
-    # ======================================================
-    # 📌 FULL COMMAND LIST — WHEN USER CLICKS “COMMANDS”
+    # 📌 FULL COMMAND LIST
     # ======================================================
     @bot.on_callback_query(filters.regex("^help_show$"))
     async def help_show(_, q):
         try:
             commands_text = (
                 "<b>✧༺━━━༻✧  C O M M A N D S  ✧༺━━━༻✧</b>\n\n"
-
                 "👤 <b>P R O F I L E</b>\n"
                 "• <code>/profile</code> – View your profile\n"
                 "• <code>/inventory</code> – View your items\n"
@@ -142,26 +81,26 @@ def init_start(bot: Client):
                 "🎮 <b>G A M E S</b>\n"
                 "• <code>/flip</code> – Coin flip\n"
                 "• <code>/roll</code> – Dice roll\n"
-                "• <code>/fight</code> – Fight another user\n"
-                "• <code>/guess</code> – Guess the hidden word\n"
+                "• <code>/fight</code> – Fight\n"
+                "• <code>/guess</code> – Guess the word\n"
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
                 "⛏ <b>M I N I N G</b>\n"
                 "• <code>/mine</code> – Mine ores\n"
-                "• <code>/sell</code> – Sell mined ores\n"
+                "• <code>/sell</code> – Sell ores\n"
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
                 "🛒 <b>S H O P</b>\n"
-                "• <code>/buy</code> – Buy tools or items\n"
+                "• <code>/buy</code> – Buy items\n"
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
                 "📊 <b>O T H E R</b>\n"
-                "• <code>/leaderboard</code> – Show top players\n"
-                "• <code>/help</code> – Show help\n"
+                "• <code>/leaderboard</code> – Leaderboard\n"
+                "• <code>/help</code> – Help\n"
             )
 
             kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Back", callback_data="help_menu")]
+                [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")]
             ])
 
             await safe_edit(q.message, commands_text, kb)
@@ -169,5 +108,15 @@ def init_start(bot: Client):
 
         except Exception:
             traceback.print_exc()
+
+    # Back button → return to start menu
+    @bot.on_callback_query(filters.regex("^back_to_home$"))
+    async def back_to_home(_, q):
+        await safe_edit(
+            q.message,
+            START_TEXT.format(name=q.from_user.first_name),
+            get_start_menu()
+        )
+        await q.answer()
 
     print("[loaded] games.start")
