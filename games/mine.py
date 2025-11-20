@@ -4,9 +4,10 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 import random
 import time
 
-# --------------------
+
+# -------------------------------------
 # DATABASE
-# --------------------
+# -------------------------------------
 try:
     from database.mongo import get_user, update_user
 except Exception:
@@ -17,16 +18,17 @@ except Exception:
             "tools": {"Wooden": 1},
             "equipped": "Wooden",
             "inventory": {"ores": {}, "items": []},
-            "tool_durabilities": {},
+            "tool_durabilities": {"Wooden": 50},
             "last_mine": 0,
         }
 
     def update_user(user_id, data):
         pass
 
-# --------------------
+
+# -------------------------------------
 # TOOLS
-# --------------------
+# -------------------------------------
 TOOLS = {
     "Wooden": {"power": 1, "durability": 50, "price": 50},
     "Stone": {"power": 2, "durability": 100, "price": 150},
@@ -37,9 +39,10 @@ TOOLS = {
     "Emerald": {"power": 9, "durability": 450, "price": 20000},
 }
 
-# --------------------
+
+# -------------------------------------
 # ORES
-# --------------------
+# -------------------------------------
 ORES = [
     {"name": "Stone", "min_power": 0, "weight": 50, "value": 1},
     {"name": "Coal", "min_power": 1, "weight": 40, "value": 2},
@@ -54,9 +57,10 @@ ORES = [
 
 MINE_COOLDOWN = 5
 
-# --------------------
+
+# -------------------------------------
 # HELPERS
-# --------------------
+# -------------------------------------
 def weighted_choice(opts):
     total = sum(o["weight"] for o in opts)
     pick = random.uniform(0, total)
@@ -80,9 +84,9 @@ def ensure_user(u):
     return u
 
 
-# --------------------
+# -------------------------------------
 # MINE ACTION
-# --------------------
+# -------------------------------------
 def mine_action(uid):
     user = ensure_user(get_user(uid))
     now = time.time()
@@ -117,15 +121,15 @@ def mine_action(uid):
     }
 
 
-# --------------------
-# COMMAND HANDLERS
-# --------------------
-def _mine(client, message: Message):
+# -------------------------------------
+# HANDLERS
+# -------------------------------------
+def _mine(_, message: Message):
     res = mine_action(message.from_user.id)
     message.reply_text(res["message"])
 
 
-def _sell_menu(client, message: Message):
+def _sell_menu(_, message: Message):
     keyboard, row = [], []
     for ore in ORES:
         row.append(InlineKeyboardButton(ore["name"], callback_data=f"sell_{ore['name']}"))
@@ -138,7 +142,7 @@ def _sell_menu(client, message: Message):
     message.reply_text("🛒 **Choose an ore to sell:**", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-def _sell_handler(client, query: CallbackQuery):
+def _sell_handler(_, query: CallbackQuery):
     name = query.data.replace("sell_", "")
     user = ensure_user(get_user(query.from_user.id))
     ores = user["inventory"]["ores"]
@@ -158,11 +162,12 @@ def _sell_handler(client, query: CallbackQuery):
     query.answer()
 
 
-# --------------------
-# INIT HANDLERS
-# --------------------
+# -------------------------------------
+# INIT
+# -------------------------------------
 def init_mine(bot: Client):
-    bot.add_handler(MessageHandler(filters.command("mine"), _mine))
-    bot.add_handler(MessageHandler(filters.command("sell"), _sell_menu))
+    bot.add_handler(MessageHandler(_mine, filters.command("mine")))
+    bot.add_handler(MessageHandler(_sell_menu, filters.command("sell")))
     bot.add_handler(CallbackQueryHandler(_sell_handler))
+
     print("[loaded] games.mine")
