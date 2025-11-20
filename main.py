@@ -37,7 +37,8 @@ required_modules = [
     "fight",
     "top",
     "help",        # <-- MOVE HELP HERE (before callbacks)
-    "callbacks"    # <-- callbacks always last
+    "callbacks",   # <-- callbacks always last
+    "mine"
 ]
 
 optional_modules = [
@@ -45,7 +46,6 @@ optional_modules = [
     "work",
     "shop",
     "guess",
-    "mine"
 ]
 
 if __name__ == "__main__":
