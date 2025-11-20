@@ -1,7 +1,8 @@
-# File: GameBot/GameBot/games/help.py
+# File: GameBot/games/help.py
 from pyrogram import Client, filters
 from pyrogram.types import Message
 import traceback
+
 
 def init_help(bot: Client):
 
@@ -9,42 +10,34 @@ def init_help(bot: Client):
     async def help_cmd(_, msg: Message):
         try:
             text = (
-                "🎮 **GameBot Help Menu**\n\n"
+                "<b>🎮 GameBot Help Menu</b>\n\n"
 
-                "<b>✧༺━━━༻✧  C O M M A N D S  ✧༺━━━༻✧</b>\n\n"
-                "👤 <b>P R O F I L E</b>\n"
-                "• <code>/profile</code> – View your profile\n"
-                "• <code>/inventory</code> – View your items\n"
-                "• <code>/stats</code> – View statistics\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "<b>📌 General</b>\n"
+                "/start - Main menu\n"
+                "/help or /commands - Help menu\n"
+                "/profile - Show your profile\n"
+                "/inv - Show your inventory\n"
+                "/work - Earn bronze\n"
+                "/shop - Open shop\n"
+                "/buy &lt;item&gt; - Purchase item\n"
+                "/leaderboard - Show rankings\n\n"
 
-                "🎮 <b>G A M E S</b>\n"
-                "• <code>/flip</code> – Coin flip\n"
-                "• <code>/roll</code> – Dice roll\n"
-                "• <code>/fight</code> – Fight\n"
-                "• <code>/guess</code> – Guess the word\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "<b>🎮 Games</b>\n"
+                "/flip - Coin Flip\n"
+                "/roll - Dice Roll\n"
+                "/fight - Fight another player\n"
+                "/rob - Rob a user\n"
+                "/guess - Guessing game\n"
+                "/mine - Mine ores\n\n"
 
-                "⛏ <b>M I N I N G</b>\n"
-                "• <code>/mine</code> – Mine ores\n"
-                "• <code>/sell</code> – Sell ores\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "🛒 <b>S H O P</b>\n"
-                "• <code>/buy</code> – Buy items\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "📊 <b>O T H E R</b>\n"
-                "• <code>/leaderboard</code> – Leaderboard\n"
-
-                "ℹ️ *Tip:* Some features require a profile. Use /start if you haven't."
+                "ℹ️ Use commands in private chat for the best experience."
             )
 
-            await msg.reply_text(text, parse_mode="markdown")
+            await msg.reply(text)
 
         except Exception:
             traceback.print_exc()
             try:
-                await msg.reply_text("⚠️ Error showing help menu.")
+                await msg.reply("⚠️ Failed to load help menu.")
             except:
                 pass
