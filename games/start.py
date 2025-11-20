@@ -1,11 +1,11 @@
 # File: GameBot/GameBot/games/start.py
 
 # ==========================================================
-# 🚫 FIX: Prevent duplicate loading of this module
+# 🚫 Prevent accidental double-loading
 # ==========================================================
-if "start_already_loaded" in globals():
+if "start_loaded" in globals():
     raise SystemExit
-start_already_loaded = True
+start_loaded = True
 
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -15,7 +15,7 @@ import traceback
 from database.mongo import get_user, create_user_if_not_exists
 
 # ==========================================================
-# 📌 START TEXT (Home Page)
+# 📌 START TEXT (DM Home Page)
 # ==========================================================
 START_TEXT = (
     "Hᴇʏ {name}\n\n"
@@ -33,7 +33,7 @@ START_TEXT = (
 )
 
 # ==========================================================
-# 📌 MAIN MENU BUTTONS (shown only in DM)
+# 📌 MAIN MENU (DM Only)
 # ==========================================================
 def get_start_menu():
     return InlineKeyboardMarkup([
@@ -53,7 +53,7 @@ async def safe_edit(message, text, markup=None):
         return
 
 # ==========================================================
-# 📌 START HANDLER — Group + Private
+# 📌 START HANDLER (Group + DM)
 # ==========================================================
 def init_start(bot: Client):
 
@@ -64,7 +64,7 @@ def init_start(bot: Client):
 
             args = msg.command[1:] if len(msg.command) > 1 else []
 
-            # ===== Deep-link: /start help =====
+            # /start help
             if args and args[0] == "help":
                 from games.help import FULL_HELP_TEXT
                 await msg.reply_text(
@@ -77,25 +77,32 @@ def init_start(bot: Client):
             bot_me = await _.get_me()
             PRIVATE = msg.chat.type == "private"
 
+            # ====================
+            # PRIVATE CHAT START
+            # ====================
             if PRIVATE:
-                # ===== DM → Full start text + menu =====
                 await msg.reply(
                     START_TEXT.format(name=msg.from_user.first_name),
                     reply_markup=get_start_menu()
                 )
-            else:
-                # ===== GROUP → SAME start text but only 1 Start button =====
-                start_btn = InlineKeyboardMarkup([
-                    [InlineKeyboardButton(
-                        "Start",
-                        url=f"https://t.me/{bot_me.username}?start=menu"
-                    )]
-                ])
+                return
 
-                await msg.reply(
-                    START_TEXT.format(name=msg.from_user.first_name),
-                    reply_markup=start_btn
-                )
+            # ====================
+            # GROUP START
+            # ====================
+            start_btn = InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    "Start",
+                    url=f"https://t.me/{bot_me.username}?start=menu"
+                )]
+            ])
+
+            await msg.reply(
+                f"Hello {msg.from_user.first_name}, I’m a Gaming Bot!\n"
+                "But Even I Am Not Aware Of All My Features Yet.\n\n"
+                "Will You Help Me Discover Them? 👇",
+                reply_markup=start_btn
+            )
 
         except Exception:
             traceback.print_exc()
@@ -105,7 +112,7 @@ def init_start(bot: Client):
                 pass
 
     # ======================================================
-    # 📌 HELP CENTER CALLBACK
+    # 📌 HELP CENTER BUTTON
     # ======================================================
     @bot.on_callback_query(filters.regex("^help_show$"))
     async def help_show(_, q):
@@ -118,18 +125,17 @@ def init_start(bot: Client):
                 "• /flip — Coin Flip Duel\n"
                 "• /roll — Dice Roll\n"
                 "• /fight — Fight Another Player\n"
-                "• /rob — Rob a Player (Risk + Reward)\n"
-                "• /guess — Guess the Hidden Word\n\n"
+                "• /rob — Rob a Player\n"
+                "• /guess — Guess the Word\n\n"
                 "⟡ <b><i>Mining</i></b>\n"
                 "• /mine — Mine Ores\n"
-                "• /sell — Sell Your Mined Ores\n\n"
+                "• /sell — Sell Ores\n\n"
                 "⟡ <b><i>Shop</i></b>\n"
                 "• /shop — View Shop Items\n"
-                "• /buy — Buy Items/Tools\n\n"
+                "• /buy — Buy Tools\n\n"
                 "⟡ <b><i>Other</i></b>\n"
                 "• /leaderboard — Top Players\n"
-                "• /work — Earn Bronze Coins\n\n"
-                "⟡ <i>Tip: Use commands in DM for best performance.</i> ⚡️"
+                "• /work — Earn Bronze\n"
             )
 
             kb = InlineKeyboardMarkup([
@@ -138,12 +144,11 @@ def init_start(bot: Client):
 
             await safe_edit(q.message, commands_text, kb)
             await q.answer()
-
-        except Exception:
+        except:
             traceback.print_exc()
 
     # ======================================================
-    # 📌 BACK TO HOME (DM menu)
+    # 📌 BACK TO HOME BUTTON
     # ======================================================
     @bot.on_callback_query(filters.regex("^back_to_home$"))
     async def back_to_home(_, q):
