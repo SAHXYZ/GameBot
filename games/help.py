@@ -38,14 +38,12 @@ def init_help(bot: Client):
     @bot.on_message(filters.command(["help", "commands"]))
     async def help_cmd(_, msg: Message):
         try:
-            # Short help shown in group chats
             group_help = (
                 "⚙️ ● <b>HELP CENTER</b>\n\n"
                 "⟡ <i>Tip: You Should Use These Commands In Bot's Personal Chat "
                 "For Better Performance!</i> ⚡️"
             )
 
-            # PM deep link for "Help & Commands" button
             me = await bot.get_me()
             deep_link = f"https://t.me/{me.username}?start=help"
 
@@ -53,18 +51,18 @@ def init_help(bot: Client):
                 [[InlineKeyboardButton("📘 Help & Commands", url=deep_link)]]
             )
 
-            # --------- Reliable private chat detection ----------
-            PRIVATE = (msg.chat.id == msg.from_user.id)
+            # --------- FINAL, BULLETPROOF PRIVATE DETECTION ----------
+            chat_type = str(msg.chat.type).lower()
+            PRIVATE = ("private" in chat_type)
 
+            # --------- SEND HELP ----------
             if PRIVATE:
-                # Send full help in private chat
                 await msg.reply_text(
                     FULL_HELP_TEXT,
                     parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True
                 )
             else:
-                # Send short help in group chat
                 await msg.reply_text(
                     group_help,
                     parse_mode=ParseMode.HTML,
