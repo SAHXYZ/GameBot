@@ -75,11 +75,13 @@ def init_start(bot: Client):
                 return
 
             bot_me = await _.get_me()
-            PRIVATE = msg.chat.type == "private"
 
-            # ====================
+            # FIX: detect DM ALWAYS (private OR bot)
+            PRIVATE = msg.chat.type in ("private", "bot")
+
+            # ============================================================== 
             # PRIVATE CHAT START
-            # ====================
+            # ==============================================================
             if PRIVATE:
                 await msg.reply(
                     START_TEXT.format(name=msg.from_user.first_name),
@@ -87,9 +89,9 @@ def init_start(bot: Client):
                 )
                 return
 
-            # ====================
+            # ============================================================== 
             # GROUP START
-            # ====================
+            # ==============================================================
             start_btn = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
                     "Start",
