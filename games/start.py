@@ -71,34 +71,27 @@ def init_start(bot: Client):
     async def help_show(_, q):
         try:
             commands_text = (
-                "<b>✧༺━━━༻✧  C O M M A N D S  ✧༺━━━༻✧</b>\n\n"
-                "👤 <b>P R O F I L E</b>\n"
-                "• <code>/profile</code> – View your profile\n"
-                "• <code>/inventory</code> – View your items\n"
-                "• <code>/stats</code> – View statistics\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "🎮 <b>G A M E S</b>\n"
-                "• <code>/flip</code> – Coin flip\n"
-                "• <code>/roll</code> – Dice roll\n"
-                "• <code>/fight</code> – Fight\n"
-                "• <code>/guess</code> – Guess the word\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "⛏ <b>M I N I N G</b>\n"
-                "• <code>/mine</code> – Mine ores\n"
-                "• <code>/sell</code> – Sell ores\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "🛒 <b>S H O P</b>\n"
-                "• /shop — Vɪᴇᴡ Sʜᴏᴘ & Bᴜʏ Iᴛᴇᴍꜱ/Tools\n"
-                "• /buy <item> — Bᴜʏ Iᴛᴇᴍꜱ/Tools\n"
-                "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-                "📊 <b>O T H E R</b>\n"
-                "• <code>/leaderboard</code> – Leaderboard\n"
-                "• <code>/help</code> – Help\n"
-            )
+    "⚙️ ● <b><i>HELP CENTER</i></b>\n\n"
+    "⟡ <b><i>Profile</i></b>\n"
+    "• /profile — View Your Profile\n\n"
+    "⟡ <b><i>Games</i></b>\n"
+    "• /flip — Coin Flip Duel\n"
+    "• /roll — Dice Roll\n"
+    "• /fight — Fight Another Player\n"
+    "• /rob — Rob a Player (Risk + Reward)\n"
+    "• /guess — Guess the Hidden Word\n\n"
+    "⟡ <b><i>Mining</i></b>\n"
+    "• /mine — Mine Ores\n"
+    "• /sell — Sell Your Mined Ores\n\n"
+    "⟡ <b><i>Shop</i></b>\n"
+    "• /shop — View Shop Items\n"
+    "• /buy — Buy Items/Tools\n\n"
+    "⟡ <b><i>Other</i></b>\n"
+    "• /leaderboard — Top Players\n"
+    "• /work — Earn Bronze Coins\n\n"
+    "⟡ <i>Tip: You Should Use These Commands In Bot's Personal Chat "
+    "For Better Performance.</i> ⚡️"
+)
 
             kb = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Back", callback_data="back_to_home")]
