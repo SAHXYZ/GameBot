@@ -1,8 +1,17 @@
 from pyrogram import Client
 import importlib
 import traceback
+import sys
+import os
 from config import API_ID, API_HASH, BOT_TOKEN
 from database.mongo import client  # ensure MongoDB initializes first
+
+# Ensure package path resolution works whether running as package or script
+# Add project root to sys.path to make imports like "games.*" resolvable.
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_this_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 bot = Client(
     "GameBot",
@@ -13,28 +22,48 @@ bot = Client(
 )
 
 def safe_init(module_name: str):
-    """Load game modules safely."""
-    try:
-        module = importlib.import_module(f"games.{module_name}")
-        init_fn = getattr(module, f"init_{module_name}", None)
+    """Load game modules safely.
 
-        if callable(init_fn):
-            init_fn(bot)
-            print(f"[loaded] games.{module_name}")
-        else:
-            print(f"[skipped] games.{module_name} (no init function)")
+    This tries multiple import styles to be resilient to how the user runs
+    the project (as package or as script). It will try:
+      - games.<module_name>
+      - GameBot.games.<module_name> (package-prefixed)
+    """
+    tried = []
+    candidates = [
+        f"games.{module_name}",
+    ]
+    # If package name is available (when executed as package), try that too.
+    # Try to detect the top-level package name (folder name)
+    top_pkg = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+    candidates.append(f"{top_pkg}.games.{module_name}")
 
-    except Exception as e:
-        print(f"[ERROR] Failed loading module: {module_name} -> {e}")
-        traceback.print_exc()
+    for qualname in candidates:
+        try:
+            tried.append(qualname)
+            module = importlib.import_module(qualname)
+            init_fn = getattr(module, f"init_{module_name}", None)
 
-# Required modules (DO NOT load callbacks twice)
+            if callable(init_fn):
+                init_fn(bot)
+                print(f"[loaded] {qualname}")
+            else:
+                print(f"[skipped] {qualname} (no init function)")
+            return
+        except Exception as e:
+            # keep trying other candidates
+            print(f"[DEBUG] Import attempt failed for '{qualname}': {e}")
+            # continue to next candidate
+
+    # If we get here, none of the import attempts worked; report a clear error.
+    print(f"[ERROR] Failed loading module '{module_name}'. Tried: {tried}")
+    traceback.print_exc()
+
+# Define the modules (you had this split into required/optional)
 required_modules = [
     "start", "flip", "roll", "rob",
     "fight", "top"
 ]
-
-# Optional modules
 optional_modules = [
     "profile", "work", "shop",
     "guess", "help", "mine"
@@ -49,7 +78,7 @@ if __name__ == "__main__":
     for module in optional_modules:
         safe_init(module)
 
-    # Load callbacks LAST
+    # Load callbacks LAST (if you have a callbacks module)
     safe_init("callbacks")
 
     print("\n✔ GameBot is running with MongoDB!")
