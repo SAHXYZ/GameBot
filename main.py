@@ -1,4 +1,4 @@
-# File: GameBot/GameBot/main.py
+# File: GameBot/main.py
 from pyrogram import Client
 import importlib
 import traceback
