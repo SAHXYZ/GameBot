@@ -10,34 +10,46 @@ def init_help(bot: Client):
     async def help_cmd(_, msg: Message):
         try:
             text = (
-                "<b>🎮 GameBot Help Menu</b>\n\n"
+                "⟦⟡⟧  H E L P   C E N T E R  ⟦⟡⟧\n"
+                "Your command arsenal.\n"
+                "Mᴀꜱᴛᴇʀ ᴛʜᴇ Gʀɪᴅ. Cᴏɴᴛʀᴏʟ ᴛʜᴇ Pʟᴀʏ. ⚡\n\n"
 
-                "<b>📌 General</b>\n"
-                "/start - Main menu\n"
-                "/help or /commands - Help menu\n"
-                "/profile - Show your profile\n"
-                "/inv - Show your inventory\n"
-                "/work - Earn bronze\n"
-                "/shop - Open shop\n"
-                "/buy &lt;item&gt; - Purchase item\n"
-                "/leaderboard - Show rankings\n\n"
+                "▐█▌  P R O F I L E\n"
+                "• /profile — Vɪᴇᴡ Yᴏᴜʀ Pʀᴏꜰɪʟᴇ\n"
+                "▞━━━━━━━━━━━━━━━━━━━━▚\n\n"
 
-                "<b>🎮 Games</b>\n"
-                "/flip - Coin Flip\n"
-                "/roll - Dice Roll\n"
-                "/fight - Fight another player\n"
-                "/rob - Rob a user\n"
-                "/guess - Guessing game\n"
-                "/mine - Mine ores\n\n"
+                "▐█▌  G A M E S\n"
+                "• /flip — Cᴏɪɴ Fʟɪᴘ Dᴜᴇʟ\n"
+                "• /roll — Dɪᴄᴇ Rᴏʟʟ\n"
+                "• /fight — Fɪɢʜᴛ Aɴᴏᴛʜᴇʀ Pʟᴀʏᴇʀ\n"
+                "• /rob — Rᴏʙ A Pʟᴀʏᴇʀ (Rɪꜱᴋ + Rᴇᴡᴀʀᴅ)\n"
+                "• /guess — Gᴜᴇꜱꜱ Tʜᴇ Hɪᴅᴅᴇᴅ Wᴏʀᴅ\n"
+                "▞━━━━━━━━━━━━━━━━━━━━▚\n\n"
 
-                "ℹ️ Use commands in private chat for the best experience."
+                "▐█▌  M I N I N G\n"
+                "• /mine — Mɪɴᴇ Oʀᴇꜱ\n"
+                "• /sell — Sᴇʟʟ Yᴏᴜʀ Mɪɴᴇᴅ Oʀᴇꜱ\n"
+                "▞━━━━━━━━━━━━━━━━━━━━▚\n\n"
+
+                "▐█▌  S H O P\n"
+                "• /shop — Vɪᴇᴡ Sʜᴏᴘ Iᴛᴇᴍꜱ\n"
+                "• /buy <item> — Bᴜʏ Iᴛᴇᴍꜱ/Tools\n"
+                "▞━━━━━━━━━━━━━━━━━━━━▚\n\n"
+
+                "▐█▌  O T H E R\n"
+                "• /leaderboard — Tᴏᴘ Pʟᴀʏᴇʀꜱ\n"
+                "• /work — Eᴀʀɴ Bʀᴏɴᴢᴇ Cᴏɪɴꜱ\n"
+                "▞━━━━━━━━━━━━━━━━━━━━▚\n\n"
+
+                "⟡ Tɪᴘ: Uꜱᴇ ᴄᴏᴍᴍᴀɴᴅꜱ ɪɴ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ ꜰᴏʀ ᴘᴇᴀᴋ ᴘᴇʀꜰᴏʀᴍᴀɴᴄᴇ.\n"
+                "Wᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ Pʀɪᴍᴇ-ᴛɪᴇʀ Rᴇᴀʟᴍ. ⚡"
             )
 
-            await msg.reply(text)
+            await msg.reply_text(text)
 
         except Exception:
             traceback.print_exc()
             try:
-                await msg.reply("⚠️ Failed to load help menu.")
+                await msg.reply_text("⚠️ Failed to load help menu.")
             except:
                 pass
