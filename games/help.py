@@ -10,17 +10,20 @@ def _help(_, msg: Message):
         "/help - Show this help message\n"
         "/profile - View your profile\n"
         "/leaderboard - Top players\n\n"
+        
         "**Mining System**\n"
         "/mine - Mine ores\n"
         "/sell - Sell ores\n"
         "/tools - View your tools\n"
         "/equip <tool> - Equip a tool\n"
         "/repair - Repair your tool\n\n"
+
         "**Economy & Items**\n"
         "/work - Earn bronze\n"
         "/shop - Buy items\n"
         "/buy <num> - Purchase an item\n"
         "/inv - View your inventory\n\n"
+
         "**Games**\n"
         "/flip - Coin flip\n"
         "/roll - Dice roll\n"
@@ -32,5 +35,8 @@ def _help(_, msg: Message):
     msg.reply(text)
 
 def init_help(bot: Client):
-    bot.add_handler(MessageHandler(_help), filters=filters.command("help") & filters.private)
+    bot.add_handler(MessageHandler(
+        _help,
+        filters.command("help") & filters.private
+    ))
     print("[loaded] games.help")
