@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from database.mongo import get_user, update_user
+
 
 START_TEXT = (
     "Hᴇʏ {name}\n\n"
@@ -17,27 +18,77 @@ START_TEXT = (
     "◆ ᴘᴏᴡᴇʀᴇᴅ ʙʏ @PrimordialEmperor ◆"
 )
 
+
 def get_start_menu():
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("🕹 Commands", callback_data="show_commands"),
-                InlineKeyboardButton("👤 Profile", callback_data="show_profile"),
+                InlineKeyboardButton("🕹 Commands", callback_data="start_cmds"),
+                InlineKeyboardButton("👤 Profile", callback_data="start_profile"),
             ]
         ]
     )
 
+
 def init_start(bot: Client):
 
-    @bot.on_message(filters.command("start"))
+    # -------------------------
+    # /start command
+    # -------------------------
+    @bot.on_message(filters.command("start") & filters.private)
     async def start_handler(_, msg: Message):
 
-        if not msg.from_user:
+        user = msg.from_user
+        if not user:
             return
 
-        user_id = msg.from_user.id
-        # ensure user exists in DB (creates if missing)
-        get_user(user_id)
+        user_id = user.id
 
-        name = msg.from_user.first_name if msg.from_user else "Player"
-        await msg.reply(START_TEXT.format(name=name), reply_markup=get_start_menu())
+        # Ensure user exists + fix structure
+        u = get_user(user_id)
+        update_user(user_id, u)
+
+        await msg.reply(
+            START_TEXT.format(name=user.first_name),
+            reply_markup=get_start_menu()
+        )
+
+    # -------------------------
+    # Callback: Show Commands
+    # -------------------------
+    @bot.on_callback_query(filters.regex("^start_cmds$"))
+    async def show_commands(_, q: CallbackQuery):
+        await q.message.edit_text(
+            "🕹 **Commands Menu**\n\n"
+            "/help — Full command list\n"
+            "/profile — View your stats\n"
+            "/mine — Start mining ores\n"
+            "/sell — Sell your mined ores\n"
+            "/work — Earn bronze\n"
+            "/shop — Buy items\n"
+            "\nUse /help for the full menu."
+        )
+        q.answer()
+
+    # -------------------------
+    # Callback: Show Profile
+    # -------------------------
+    @bot.on_callback_query(filters.regex("^start_profile$"))
+    async def show_profile(_, q: CallbackQuery):
+
+        user = get_user(q.from_user.id)
+
+        bronze = user.get("bronze", 0)
+        items = len(user.get("inventory", {}).get("items", []))
+        ores = sum(user.get("inventory", {}).get("ores", {}).values())
+
+        await q.message.edit_text(
+            f"👤 **Your Profile**\n\n"
+            f"🥉 Bronze: **{bronze}**\n"
+            f"🪨 Total Ores: **{ores}**\n"
+            f"🎒 Items: **{items}**\n"
+            f"\nUse /profile for full details."
+        )
+        q.answer()
+
+    print("[loaded] games.start")
