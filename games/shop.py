@@ -47,18 +47,34 @@ def init_shop(bot: Client):
         bronze = user.get("bronze", 0)
         if bronze < price:
             return await msg.reply(
-                f"❌ You need **{price} Bronze 🥉** to buy **{item_name}**, but you only have **{bronze} Bronze**."
+                f"❌ You need **{price} Bronze 🥉** to buy **{item_name}**, "
+                f"but you only have **{bronze} Bronze**."
             )
 
+        # Deduct bronze
         new_bronze = bronze - price
-        inventory = user.get("inventory", [])
-        inventory.append(item_name)
 
+        # Ensure unified inventory structure
+        inventory = user.get("inventory", {})
+        if not isinstance(inventory, dict):
+            inventory = {}
+
+        # Store items separately
+        items = inventory.get("items", [])
+        items.append(item_name)
+
+        # Update badges
         badges = user.get("badges", [])
-        if len(inventory) >= 5 and "🛍️" not in badges:
+        if len(items) >= 5 and "🛍️" not in badges:
             badges.append("🛍️")
 
-        update_user(user_id, {"bronze": new_bronze, "inventory": inventory, "badges": badges})
+        # Save everything
+        inventory["items"] = items
+
+        update_user(
+            user_id,
+            {"bronze": new_bronze, "inventory": inventory, "badges": badges}
+        )
 
         await msg.reply(
             f"✅ **Purchased:** {item_name}\n"
