@@ -42,6 +42,8 @@ required_modules = [
     "profile",
     "work",
     "shop",
+    "sell",
+    "equip",
     "guess"
 ]
 
