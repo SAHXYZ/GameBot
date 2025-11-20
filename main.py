@@ -3,8 +3,7 @@ from pyrogram import Client
 import importlib
 import traceback
 from config import API_ID, API_HASH, BOT_TOKEN
-from database.mongo import client   # ensure MongoDB loads first
-
+from database.mongo import client  # ensure MongoDB loads first
 
 bot = Client(
     "GameBot",
@@ -14,12 +13,7 @@ bot = Client(
     workers=32
 )
 
-
 def safe_init(module_name: str):
-    """
-    Simple and stable loader — import ONLY from games.<module>.
-    No fallback, no alternate packages, no circular import triggers.
-    """
     try:
         mod = importlib.import_module(f"games.{module_name}")
         init_fn = getattr(mod, f"init_{module_name}", None)
@@ -28,29 +22,40 @@ def safe_init(module_name: str):
             init_fn(bot)
             print(f"[loaded] games.{module_name}")
         else:
-            print(f"[skipped] games.{module_name} (no init)")
+            print(f"[skipped] games.{module_name}")
+
     except Exception as e:
-        print(f"[ERROR] Failed to load {module_name}: {e}")
+        print(f"[ERROR] {module_name}: {e}")
         traceback.print_exc()
 
-
-# Load modules
+# IMPORTANT: help MUST load before callbacks
 required_modules = [
-    "start", "flip", "roll", "rob",
-    "fight", "top", "callbacks"
+    "start",
+    "flip",
+    "roll",
+    "rob",
+    "fight",
+    "top",
+    "help",        # <-- MOVE HELP HERE (before callbacks)
+    "callbacks"    # <-- callbacks always last
 ]
 
 optional_modules = [
-    "profile", "work", "shop",
-    "guess", "help", "mine"
+    "profile",
+    "work",
+    "shop",
+    "guess",
+    "mine"
 ]
 
-
 if __name__ == "__main__":
-    print("Initializing GameBot...\n")
+    print("Initializing GameBot...")
 
-    for module in required_modules + optional_modules:
+    for module in required_modules:
         safe_init(module)
 
-    print("\n✔ GameBot initialized. Starting client...")
+    for module in optional_modules:
+        safe_init(module)
+
+    print("✔ GameBot is running with MongoDB!")
     bot.run()
