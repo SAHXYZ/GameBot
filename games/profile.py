@@ -1,3 +1,4 @@
+# File: GameBot/games/profile.py
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from database.mongo import get_user
@@ -29,7 +30,7 @@ def build_profile_text_for_user(user: dict, mention: str):
     # Inventory (NEW)
     inv = user.get("inventory", {})
     ores = inv.get("ores", {})
-    items = inv.get("items", [])
+    items = inv.get("items", []) 
 
     # Quick summaries
     ore_summary = ", ".join([f"{k}({v})" for k, v in ores.items()]) or "No ores"
