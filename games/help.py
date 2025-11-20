@@ -1,6 +1,5 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.handlers import MessageHandler
 
 
 def send_help_text(msg: Message):
@@ -22,7 +21,7 @@ def send_help_text(msg: Message):
         "**Economy & Items**\n"
         "/work - Earn bronze\n"
         "/shop - Buy items\n"
-        "/buy <num> - Purchase item\n"
+        "/buy <item> - Purchase item\n"
         "/inv - Show inventory\n\n"
 
         "**Games**\n"
@@ -39,34 +38,27 @@ def send_help_text(msg: Message):
 def init_help(bot: Client):
 
     # -----------------------------
-    # /help in PRIVATE (normal help)
+    # /help in PRIVATE
     # -----------------------------
     @bot.on_message(filters.command("help") & filters.private)
-    async def help_dm(_, msg: Message):
+    async def help_private(_, msg: Message):
         send_help_text(msg)
 
-
     # -----------------------------
-    # /help in GROUP (redirect to DM)
+    # /help in GROUP
     # -----------------------------
-    @bot.on_message(filters.command("help") & ~filters.private)
+    @bot.on_message(filters.command("help") & filters.group)
     async def help_group(_, msg: Message):
 
-        username = (await msg._client.get_me()).username
+        bot_user = await bot.get_me()
 
         btn = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("📬 Open Help in DM", url=f"https://t.me/{username}?start=help")]]
+            [[InlineKeyboardButton("📬 View Help in DM", url=f"https://t.me/{bot_user.username}?start=help")]]
         )
 
         await msg.reply(
-            "📬 **Help is available in my DM. Tap below:**",
+            "📬 **Help is available in DM. Tap the button below.**",
             reply_markup=btn
         )
-
-
-    # -----------------------------
-    # Register handler correctly
-    # -----------------------------
-    bot.add_handler(MessageHandler(help_dm, filters.command("help") & filters.private), group=0)
 
     print("[loaded] games.help")
