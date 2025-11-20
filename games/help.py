@@ -1,29 +1,23 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message
-from pyrogram.handlers import MessageHandler
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 def _help(_, msg: Message):
     text = (
         "🎮 **GameBot Help Menu**\n\n"
         "**General Commands**\n"
-        "/start - Show menu\n"
-        "/help - Show this help message\n"
-        "/profile - View your profile\n"
+        "/start - Show main menu\n"
+        "/profile - Your stats\n"
         "/leaderboard - Top players\n\n"
-        
         "**Mining System**\n"
         "/mine - Mine ores\n"
         "/sell - Sell ores\n"
-        "/tools - View your tools\n"
-        "/equip <tool> - Equip a tool\n"
-        "/repair - Repair your tool\n\n"
-
-        "**Economy & Items**\n"
+        "/tools - View tools\n"
+        "/equip <tool> - Equip tool\n"
+        "/repair - Repair tool\n\n"
+        "**Economy**\n"
         "/work - Earn bronze\n"
         "/shop - Buy items\n"
-        "/buy <num> - Purchase an item\n"
-        "/inv - View your inventory\n\n"
-
+        "/buy <num> - Purchase an item\n\n"
         "**Games**\n"
         "/flip - Coin flip\n"
         "/roll - Dice roll\n"
@@ -35,8 +29,31 @@ def _help(_, msg: Message):
     msg.reply(text)
 
 def init_help(bot: Client):
-    bot.add_handler(MessageHandler(
-        _help,
-        filters.command("help") & filters.private
-    ))
+
+    # -------------------------
+    # /help in PRIVATE chat
+    # -------------------------
+    @bot.on_message(filters.command("help") & filters.private)
+    async def help_private(_, msg: Message):
+        _help(_, msg)
+
+    # -------------------------
+    # /help in GROUP → redirect to DM
+    # -------------------------
+    @bot.on_message(filters.command("help") & ~filters.private)
+    async def help_group(_, msg: Message):
+
+        bot_username = (await msg._client.get_me()).username
+
+        await msg.reply(
+            "📬 **The help menu is available in DM!**\n"
+            "Click below to open the bot.",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("📥 Open Help Menu", url=f"https://t.me/{bot_username}?start=help")]
+                ]
+            )
+        )
+        return
+
     print("[loaded] games.help")
