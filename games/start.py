@@ -103,7 +103,8 @@ def init_start(bot: Client):
             ])
 
             await msg.reply(
-                f"Hello {msg.from_user.first_name}, \nI’m a Gaming Bot!\n\n"
+                f"Hello {msg.from_user.first_name}, \n\n"
+                "I’m a Gaming Bot!,"
                 "But Even I Am Not Aware Of All My Features Yet.\n"
                 "Will You Help Me Discover Them? 👇",
                 reply_markup=start_btn
