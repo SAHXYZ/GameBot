@@ -37,8 +37,10 @@ START_TEXT = (
 # ==========================================================
 def get_start_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("👤 Profile", callback_data="open_profile")],
-        [InlineKeyboardButton("❓ Commands", callback_data="help_show")],
+        [
+        InlineKeyboardButton("👤 Profile", callback_data="open_profile"),
+        InlineKeyboardButton("❓ Commands", callback_data="help_show")
+    ]
     ])
 
 # ==========================================================
