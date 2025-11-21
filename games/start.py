@@ -77,7 +77,7 @@ def init_start(bot: Client):
             bot_me = await _.get_me()
 
             # ======================================================
-            # 📌 PRIVATE CHAT → ONLY SHOW START_TEXT + MENU
+            # 📌 PRIVATE CHAT → ALWAYS SHOW START_TEXT + MENU
             # ======================================================
             if msg.chat.type == "private":
                 await msg.reply(
@@ -87,7 +87,7 @@ def init_start(bot: Client):
                 return
 
             # ======================================================
-            # 📌 GROUP CHAT → Short Intro + DM Start Button
+            # 📌 GROUP CHAT → Short Intro + Button to DM
             # ======================================================
             start_btn = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
