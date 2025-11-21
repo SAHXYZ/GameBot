@@ -26,7 +26,7 @@ FULL_HELP_TEXT = (
     "⟡ <b><i>Other</i></b>\n"
     "• /leaderboard — Top Players\n"
     "• /work — Earn Bronze Coins\n\n"
-    "⟡ <i>Tip: You Should Use These Commands In Group Chat"
+    "⟡ <i>Tip: You Should Use These Commands In Group Chat "
     "For Better Performance.</i> ⚡️"
 )
 
