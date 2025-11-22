@@ -7,6 +7,7 @@ import random
 
 from database.mongo import get_user, update_user
 
+
 DAILY_COOLDOWN = 24 * 60 * 60
 DAILY_MIN = 100
 DAILY_MAX = 300
@@ -18,22 +19,23 @@ def format_time_left(seconds: int) -> str:
     h = seconds // 3600
     m = (seconds % 3600) // 60
     s = seconds % 60
-    parts = []
-    if h: parts.append(f"{h}h")
-    if m: parts.append(f"{m}m")
-    if s or not parts: parts.append(f"{s}s")
-    return " ".join(parts)
+    out = []
+    if h: out.append(f"{h}h")
+    if m: out.append(f"{m}m")
+    if s or not out: out.append(f"{s}s")
+    return " ".join(out)
 
 
-async def claim_daily_and_reply(bot, user_id, reply_target):
-    """Handles daily logic and sends reply to a message OR callback."""
-    db_user = get_user(user_id)
-    if not db_user:
-        await reply_target.reply_text("⚠️ You don't have a profile yet.\nUse /start to create one.")
+async def process_daily(bot, user_id: int, reply_target):
+    """Shared daily reward logic (used by /daily & button)"""
+
+    user = get_user(user_id)
+    if not user:
+        await reply_target.reply_text("⚠️ You don't have a profile yet.\nUse /start first.")
         return
 
     now = int(time.time())
-    last_daily = db_user.get("last_daily")
+    last_daily = user.get("last_daily")
 
     if last_daily:
         remaining = (last_daily + DAILY_COOLDOWN) - now
@@ -44,7 +46,7 @@ async def claim_daily_and_reply(bot, user_id, reply_target):
             )
             return
 
-    streak = db_user.get("daily_streak", 0)
+    streak = user.get("daily_streak", 0)
     if last_daily and now - last_daily <= DAILY_COOLDOWN * 2:
         streak += 1
     else:
@@ -54,7 +56,7 @@ async def claim_daily_and_reply(bot, user_id, reply_target):
     bonus_pct = min(streak * 5, 50)
     bonus = int(base * bonus_pct / 100)
     total = base + bonus
-    new_balance = db_user.get("coins", 0) + total
+    new_balance = user.get("coins", 0) + total
 
     update_user(
         user_id,
@@ -77,15 +79,15 @@ async def claim_daily_and_reply(bot, user_id, reply_target):
 
 def init_daily(bot: Client):
 
-    # user manually types /daily
-   @bot.on_message((filters.command("daily") | filters.regex(r"(?i)^[/!.]daily\b")))
+    # Works for any /daily format (desktop, mobile, formatted)
+    @bot.on_message(filters.command("daily") | filters.regex(r"(?i)^[/!.]daily\b"))
     async def daily_handler(_, message: Message):
-        await claim_daily_and_reply(bot, message.from_user.id, message)
+        await process_daily(bot, message.from_user.id, message)
 
-    # user clicks Daily Bonus button (callback)
+    # Works when clicking "Daily Bonus" button
     @bot.on_callback_query(filters.regex("^open_daily$"))
-    async def callback_daily(_, q: CallbackQuery):
-        await claim_daily_and_reply(bot, q.from_user.id, q.message)
+    async def daily_callback(_, q: CallbackQuery):
+        await process_daily(bot, q.from_user.id, q.message)
         await q.answer()
 
     print("[loaded] games.daily")
