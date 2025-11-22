@@ -29,7 +29,8 @@ def safe_init(module_name: str):
         print(f"[ERROR] {module_name}: {e}")
         traceback.print_exc()
 
-# IMPORTANT: help MUST load before callbacks
+
+# Load modules
 required_modules = [
     "start",
     "flip",
@@ -37,7 +38,7 @@ required_modules = [
     "rob",
     "fight",
     "top",
-    "help",        # <-- MOVE HELP HERE (before callbacks)
+    "help",
     "mine",
     "profile",
     "work",
@@ -46,11 +47,11 @@ required_modules = [
     "equip",
     "guess",
     "daily",
-    "callbacks"  # <-- callbacks always last
+    "callbacks"
 ]
 
-optional_modules = [
-]
+optional_modules = []
+
 
 if __name__ == "__main__":
     print("Initializing GameBot...")
@@ -61,10 +62,5 @@ if __name__ == "__main__":
     for module in optional_modules:
         safe_init(module)
 
-print("✔ GameBot is running with MongoDB!")
-bot.run()
-
-# 🔥 keep dyno alive forever
-import time
-while True:
-    time.sleep(30)
+    print("✔ GameBot is running with MongoDB!")
+    bot.run()   # ⬅️ block here and DO NOT add extra while-loops
