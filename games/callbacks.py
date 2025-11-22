@@ -8,7 +8,6 @@ from games.start import get_start_menu, START_TEXT
 from games.profile import build_profile_text_for_user, get_profile_markup
 
 
-# Safe editor (async: await edit_text to avoid "coroutine was never awaited")
 async def safe_edit(message, text, markup=None):
     try:
         if markup:
@@ -16,14 +15,11 @@ async def safe_edit(message, text, markup=None):
         else:
             return await message.edit_text(text)
     except Exception:
-        return  # silent, safe fallback
+        return
 
 
 def init_callbacks(bot: Client):
 
-    # ===============================
-    # 🔙 Back to home callback
-    # ===============================
     @bot.on_callback_query(filters.regex("^start_back$"))
     async def start_back(_, q: CallbackQuery):
         try:
@@ -35,11 +31,11 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Error"); except: pass
+            try:
+                await q.answer("⚠️ Error")
+            except:
+                pass
 
-    # ===============================
-    # 🔙 Back to main menu (common)
-    # ===============================
     @bot.on_callback_query(filters.regex("^back_to_home$"))
     async def cb_back_home(_, q: CallbackQuery):
         try:
@@ -51,11 +47,11 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Error"); except: pass
+            try:
+                await q.answer("⚠️ Error")
+            except:
+                pass
 
-    # ===============================
-    # 👤 Profile callback
-    # ===============================
     @bot.on_callback_query(filters.regex("^open_profile$"))
     async def cb_open_profile(_, q: CallbackQuery):
         try:
@@ -72,20 +68,24 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Unable to load profile."); except: pass
+            try:
+                await q.answer("⚠️ Unable to load profile.")
+            except:
+                pass
 
-    # ===============================
-    # 🎁 DAILY BONUS CALLBACK (NEW)
-    # ===============================
+    # 🎁 DAILY BONUS BUTTON
     @bot.on_callback_query(filters.regex("^daily_bonus$"))
     async def cb_daily_bonus(_, q: CallbackQuery):
         try:
-            from games.daily import claim_daily    # import inside to prevent circular import
+            from games.daily import claim_daily
             result = claim_daily(q.from_user.id)
             await q.message.reply(result)
             await q.answer("Daily reward claimed!")
         except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Error in daily reward"); except: pass
+            try:
+                await q.answer("⚠️ Error in daily reward")
+            except:
+                pass
 
     print("[loaded] games.callbacks")
