@@ -68,7 +68,5 @@ async def daily_handler(client, msg: Message):
 
 # ---- REQUIRED for loading in main.py ----
 def init_daily(bot):
-    bot.add_handler(
-        filters.command("daily")(daily_handler)
-    )
+    bot.on_message(filters.command("daily"))(daily_handler)
     print(" -> daily module initialized")
