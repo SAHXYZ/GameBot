@@ -79,3 +79,7 @@ async def daily_handler(client: Client, msg: Message):
         f"💰 **+{reward_amount} Bronze** added to your wallet.\n\n"
         f"Come back again after **24 hours**!"
     )
+    # ---- IMPORTANT: loader support ----
+def init_daily(bot):
+    print(" -> daily module initialized")
+
