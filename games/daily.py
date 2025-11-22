@@ -4,6 +4,7 @@ import time
 import random
 from pyrogram import Client, filters
 
+
 def claim_daily(user_id: int) -> str:
     user = get_user(user_id)
     now = int(time.time())
@@ -13,22 +14,23 @@ def claim_daily(user_id: int) -> str:
         remaining = 86400 - (now - last)
         hrs = remaining // 3600
         mins = (remaining % 3600) // 60
-        return f"🕰️ You already claimed your daily bonus!\nTry again in **{hrs}h {mins}m**."
+        return f"⏳ You already claimed your daily bonus!\nTry again in **{hrs}h {mins}m**."
 
     reward = random.randint(100, 300)
+
     user["coins"] = user.get("coins", 0) + reward
     user["last_daily"] = now
     update_user(user_id, user)
 
     return f"🎁 You claimed **{reward} coins**!"
 
-def init_daily(bot: Client):
-   @bot.on_message(filters.command(["daily"]) | filters.regex(r"^/daily(@\w+)?$"))
-async def daily_cmd(_, msg):
-    try:
-        result = claim_daily(msg.from_user.id)
-        await msg.reply(result)
-    except Exception as e:
-        await msg.reply("⚠️ Error in daily reward")
-        print(e)
 
+def init_daily(bot: Client):
+    @bot.on_message(filters.command(["daily"]) | filters.regex(r"^/daily(@\w+)?$"))
+    async def daily_cmd(_, msg):
+        try:
+            result = claim_daily(msg.from_user.id)
+            await msg.reply(result)
+        except Exception as e:
+            print(e)
+            await msg.reply("⚠️ Error in daily reward")
