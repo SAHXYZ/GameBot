@@ -37,7 +37,7 @@ START_TEXT = (
 # ==========================================================
 def get_start_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎁 Daily Bonus", callback_data="daily_bonus")],
+        [InlineKeyboardButton("🎁 Daily Bonus", callback_data="open_daily")],
         [InlineKeyboardButton("👤 Profile", callback_data="open_profile")],
         [InlineKeyboardButton("🏆 Leaderboards", callback_data="open_leaderboard")],
     ])
