@@ -6,6 +6,7 @@ import traceback
 from database.mongo import get_user
 from games.start import get_start_menu, START_TEXT
 from games.profile import build_profile_text_for_user, get_profile_markup
+from games.daily import claim_daily  # 👈 add this import
 
 
 async def safe_edit(message, text, markup=None):
@@ -29,8 +30,12 @@ def init_callbacks(bot: Client):
                 get_start_menu()
             )
             await q.answer()
-        except:
+        except Exception:
             traceback.print_exc()
+            try:
+                await q.answer("⚠️ Error")
+            except:
+                pass
 
     @bot.on_callback_query(filters.regex("^back_to_home$"))
     async def cb_back_home(_, q: CallbackQuery):
@@ -41,8 +46,12 @@ def init_callbacks(bot: Client):
                 get_start_menu()
             )
             await q.answer()
-        except:
+        except Exception:
             traceback.print_exc()
+            try:
+                await q.answer("⚠️ Error")
+            except:
+                pass
 
     @bot.on_callback_query(filters.regex("^open_profile$"))
     async def cb_open_profile(_, q: CallbackQuery):
@@ -58,20 +67,25 @@ def init_callbacks(bot: Client):
 
             await safe_edit(q.message, text, markup)
             await q.answer()
-        except:
+        except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Unable to load profile.")
-            except: pass
+            try:
+                await q.answer("⚠️ Unable to load profile.")
+            except:
+                pass
 
     @bot.on_callback_query(filters.regex("^open_daily$"))
     async def cb_open_daily(_, q: CallbackQuery):
         try:
-            await bot.send_message(q.from_user.id, "/daily")
+            # 🔥 directly run daily logic for the user
+            await claim_daily(q.from_user.id, q.message)
             await q.answer()
-        except:
+        except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Unable to open daily.")
-            except: pass
+            try:
+                await q.answer("⚠️ Unable to open daily.")
+            except:
+                pass
 
     @bot.on_callback_query(filters.regex("^open_leaderboard$"))
     async def cb_open_leaderboard(_, q: CallbackQuery):
@@ -83,9 +97,11 @@ def init_callbacks(bot: Client):
                 leaderboard_menu()
             )
             await q.answer()
-        except:
+        except Exception:
             traceback.print_exc()
-            try: await q.answer("⚠️ Unable to load leaderboard.")
-            except: pass
+            try:
+                await q.answer("⚠️ Unable to load leaderboard.")
+            except:
+                pass
 
     print("[loaded] games.callbacks")
