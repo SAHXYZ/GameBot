@@ -63,7 +63,8 @@ if __name__ == "__main__":
 
 print("✔ GameBot is running with MongoDB!")
 bot.run()
-# 🔥 Keep the bot alive forever (prevents Heroku exit)
+
+# 🔥 keep dyno alive forever
 import time
 while True:
-    time.sleep(10)
+    time.sleep(60)
