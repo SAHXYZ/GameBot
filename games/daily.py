@@ -1,15 +1,17 @@
 # File: games/daily.py
-from database.mongo import get_user, update_user
+from database.mongo import get_user, update_user, create_user_if_not_exists
 import time
 import random
 from pyrogram import Client, filters
 
 
 def claim_daily(user_id: int) -> str:
-    user = get_user(user_id)
-    now = int(time.time())
+    # Make sure the user exists in database
+    user = create_user_if_not_exists(user_id, "")
 
+    now = int(time.time())
     last = user.get("last_daily")
+
     if last is not None and (now - last) < 86400:
         remaining = 86400 - (now - last)
         hrs = remaining // 3600
@@ -18,10 +20,11 @@ def claim_daily(user_id: int) -> str:
 
     reward = random.randint(100, 300)
 
+    # update fields safely
     user["coins"] = user.get("coins", 0) + reward
     user["last_daily"] = now
-    update_user(user_id, user)
 
+    update_user(user_id, user)
     return f"🎁 You claimed **{reward} coins**!"
 
 
