@@ -67,4 +67,4 @@ bot.run()
 # 🔥 keep dyno alive forever
 import time
 while True:
-    time.sleep(60)
+    time.sleep(30)
