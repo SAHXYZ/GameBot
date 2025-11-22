@@ -23,7 +23,12 @@ def claim_daily(user_id: int) -> str:
     return f"🎁 You claimed **{reward} coins**!"
 
 def init_daily(bot: Client):
-    @bot.on_message(filters.command("daily"))
-    async def daily_cmd(client, msg):
+   @bot.on_message(filters.command(["daily"]) | filters.regex(r"^/daily(@\w+)?$"))
+async def daily_cmd(_, msg):
+    try:
         result = claim_daily(msg.from_user.id)
-        await msg.reply(result, quote=True)
+        await msg.reply(result)
+    except Exception as e:
+        await msg.reply("⚠️ Error in daily reward")
+        print(e)
+
