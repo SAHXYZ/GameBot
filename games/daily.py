@@ -1,35 +1,29 @@
 # File: games/daily.py
-from database.mongo import get_user, update_user, create_user_if_not_exists
+from database.mongo import get_user, update_user
 import time
 import random
 from pyrogram import Client, filters
 
-
 def claim_daily(user_id: int) -> str:
-    # Make sure the user exists in database
-    user = create_user_if_not_exists(user_id, "")
-
+    user = get_user(user_id)
     now = int(time.time())
-    last = user.get("last_daily")
 
+    last = user.get("last_daily")
     if last is not None and (now - last) < 86400:
         remaining = 86400 - (now - last)
         hrs = remaining // 3600
         mins = (remaining % 3600) // 60
-        return f"⏳ You already claimed your daily bonus!\nTry again in **{hrs}h {mins}m**."
+        return f"🕰️ You already claimed your daily bonus!\nTry again in **{hrs}h {mins}m**."
 
     reward = random.randint(100, 300)
-
-    # update fields safely
     user["coins"] = user.get("coins", 0) + reward
     user["last_daily"] = now
-
     update_user(user_id, user)
-    return f"🎁 You claimed **{reward} coins**!"
 
+    return f"🎁 You claimed **{reward} coins**!"
 
 def init_daily(bot: Client):
     @bot.on_message(filters.command("daily"))
-    async def daily_cmd(_, msg):
+    async def daily_cmd(client, msg):
         result = claim_daily(msg.from_user.id)
-        await msg.reply(result)
+        await msg.reply(result, quote=True)
