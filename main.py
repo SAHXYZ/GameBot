@@ -13,7 +13,6 @@ bot = Client(
     workers=1
 )
 
-
 def safe_init(module_name: str):
     try:
         mod = importlib.import_module(f"games.{module_name}")
@@ -37,7 +36,7 @@ required_modules = [
     "rob",
     "fight",
     "top",
-    "help",        # <-- MOVE HELP HERE (before callbacks)
+    "help",
     "mine",
     "profile",
     "work",
@@ -45,8 +44,8 @@ required_modules = [
     "sell",
     "equip",
     "guess",
-    "daily",
-    "callbacks"  # <-- callbacks always last
+    "daily",      # ← daily handled here
+    "callbacks"
 ]
 
 optional_modules = [
