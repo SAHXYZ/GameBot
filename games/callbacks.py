@@ -75,17 +75,18 @@ def init_callbacks(bot: Client):
 
     # 🎁 DAILY BONUS BUTTON
     @bot.on_callback_query(filters.regex("^daily_bonus$"))
-    async def cb_daily_bonus(_, q: CallbackQuery):
+async def daily_bonus_callback(_, query):
+    try:
+        user_id = query.from_user.id
+        text = claim_daily(user_id)
+        await query.answer()  # remove loading animation
+        await query.message.edit_text(text)
+    except Exception:
+        traceback.print_exc()
         try:
-            from games.daily import claim_daily
-            result = claim_daily(q.from_user.id)
-            await q.message.reply(result)
-            await q.answer("Daily reward claimed!")
-        except Exception:
-            traceback.print_exc()
-            try:
-                await q.answer("⚠️ Error in daily reward")
-            except:
-                pass
+            await query.answer("⚠️ Failed to claim daily bonus.", show_alert=True)
+        except:
+            pass
+
 
     print("[loaded] games.callbacks")
