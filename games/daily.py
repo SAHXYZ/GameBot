@@ -49,20 +49,6 @@ async def handle_daily(client, msg):
         )
         return
 
-    # DM → Give reward
-    if not msg.from_user:
-        return await msg.reply("❌ Cannot identify user.")
-
-    try:
-        result = claim_daily(msg.from_user.id)
-        await msg.reply(result)
-    except Exception:
-        await msg.reply("⚠️ Error while processing your daily reward.")
-
-
-def init_daily(bot: Client):
-    """Initialize daily handlers — safe, no double registration."""
-
     # /daily command
     @bot.on_message(filters.command("daily"))
     async def daily_cmd_message(client, msg):
