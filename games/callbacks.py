@@ -1,6 +1,6 @@
 # File: GameBot/games/callbacks.py
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import CallbackQuery
 import traceback
 
 from database.mongo import get_user
@@ -35,10 +35,7 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try:
-                await q.answer("⚠️ Error")
-            except:
-                pass
+            try: await q.answer("⚠️ Error"); except: pass
 
     # ===============================
     # 🔙 Back to main menu (common)
@@ -54,10 +51,7 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try:
-                await q.answer("⚠️ Error")
-            except:
-                pass
+            try: await q.answer("⚠️ Error"); except: pass
 
     # ===============================
     # 👤 Profile callback
@@ -70,7 +64,6 @@ def init_callbacks(bot: Client):
                 await q.answer("You have no profile. Use /start")
                 return
 
-            # pass mention as second argument (profile builder expects mention)
             mention = getattr(q.from_user, "mention", q.from_user.first_name)
             text = build_profile_text_for_user(user, mention)
             markup = get_profile_markup()
@@ -79,9 +72,20 @@ def init_callbacks(bot: Client):
             await q.answer()
         except Exception:
             traceback.print_exc()
-            try:
-                await q.answer("⚠️ Unable to load profile.")
-            except:
-                pass
+            try: await q.answer("⚠️ Unable to load profile."); except: pass
+
+    # ===============================
+    # 🎁 DAILY BONUS CALLBACK (NEW)
+    # ===============================
+    @bot.on_callback_query(filters.regex("^daily_bonus$"))
+    async def cb_daily_bonus(_, q: CallbackQuery):
+        try:
+            from games.daily import claim_daily    # import inside to prevent circular import
+            result = claim_daily(q.from_user.id)
+            await q.message.reply(result)
+            await q.answer("Daily reward claimed!")
+        except Exception:
+            traceback.print_exc()
+            try: await q.answer("⚠️ Error in daily reward"); except: pass
 
     print("[loaded] games.callbacks")
